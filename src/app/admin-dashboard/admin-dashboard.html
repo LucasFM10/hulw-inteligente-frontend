@@ -1,0 +1,69 @@
+<div class="min-h-screen bg-gray-50 flex flex-col items-center py-10 px-4">
+  <div class="w-full max-w-5xl bg-white shadow-xl rounded-2xl overflow-hidden">
+    <!-- Header -->
+    <div class="bg-white border-b border-gray-100 px-8 py-6">
+      <h1 class="text-2xl font-bold text-gray-800 tracking-tight">
+        Painel de Gestão - Bloco Cirúrgico HULW
+      </h1>
+    </div>
+
+    <!-- Actions -->
+    <div class="px-8 py-6 bg-gray-50 flex items-center justify-between">
+      <div class="flex-1">
+        <button
+          (click)="gerarLote()"
+          [disabled]="isLoading"
+          class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-70 disabled:cursor-not-allowed transition-colors duration-200"
+        >
+          {{ isLoading ? 'Gerando...' : 'Gerar e Disparar Lote de Busca Ativa' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div *ngIf="loteGerado.length > 0" class="px-8 pb-8">
+      <div class="mt-4 overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
+        <table class="min-w-full divide-y divide-gray-300">
+          <thead class="bg-gray-50">
+            <tr>
+              <th
+                scope="col"
+                class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6"
+              >
+                Nome do Paciente
+              </th>
+              <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                Telefone
+              </th>
+              <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                Link de Acesso
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200 bg-white">
+            <tr
+              *ngFor="let item of loteGerado"
+              class="hover:bg-gray-50 transition-colors duration-150"
+            >
+              <td
+                class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6"
+              >
+                {{ item.nome_completo }}
+              </td>
+              <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ item.telefone }}</td>
+              <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                <a
+                  [href]="item.link_whatsapp"
+                  target="_blank"
+                  class="text-blue-600 hover:text-blue-900 font-medium"
+                >
+                  Acessar Portal
+                </a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

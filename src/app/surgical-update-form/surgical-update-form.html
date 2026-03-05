@@ -1,0 +1,93 @@
+<div class="min-h-screen bg-gray-100 flex flex-col items-center py-10 px-4">
+  <div class="w-full max-w-lg bg-white rounded-2xl shadow-xl overflow-hidden">
+    <!-- Header -->
+    <div class="bg-blue-900 text-white p-6 text-center">
+      <h2 class="text-xl font-bold">Atualização de Status na Fila</h2>
+      <p class="text-sm text-blue-200 mt-1">Confirme suas informações para continuarmos seu atendimento.</p>
+    </div>
+
+    <!-- Success Message -->
+    <div *ngIf="isSuccess" class="p-8 text-center flex flex-col items-center">
+      <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-4">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+      </div>
+      <h3 class="text-2xl font-bold text-gray-800 mb-2">Sucesso!</h3>
+      <p class="text-gray-600">Suas informações foram atualizadas com sucesso. O HULW agradece a sua colaboração.</p>
+    </div>
+
+    <!-- Form -->
+    <form *ngIf="!isSuccess" [formGroup]="updateForm" (ngSubmit)="onSubmit()" class="flex flex-col p-8 space-y-6">
+      
+      <!-- Error Message -->
+      <div *ngIf="errorMessage" class="bg-red-50 text-red-600 p-4 rounded-xl border border-red-200 text-sm font-semibold">
+        {{ errorMessage }}
+      </div>
+
+      <!-- Question 1: Needs Procedure -->
+      <div class="flex flex-col">
+        <label class="text-sm font-bold text-gray-800 mb-3">Você ainda precisa realizar o procedimento?</label>
+        <div class="flex space-x-4">
+          <label class="flex items-center space-x-2 cursor-pointer bg-gray-50 px-4 py-3 rounded-xl border border-gray-200 flex-1 hover:bg-blue-50 transition-colors">
+            <input type="radio" formControlName="needsProcedure" value="Sim" class="text-blue-900 focus:ring-blue-900 w-4 h-4">
+            <span class="text-gray-800 font-medium">Sim</span>
+          </label>
+          <label class="flex items-center space-x-2 cursor-pointer bg-gray-50 px-4 py-3 rounded-xl border border-gray-200 flex-1 hover:bg-blue-50 transition-colors">
+            <input type="radio" formControlName="needsProcedure" value="Não" class="text-blue-900 focus:ring-blue-900 w-4 h-4">
+            <span class="text-gray-800 font-medium">Não</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Question 2: Reason (Conditional) -->
+      <div *ngIf="updateForm.get('needsProcedure')?.value === 'Não'" class="flex flex-col animate-fadeIn">
+        <label for="reason" class="text-sm font-bold text-gray-800 mb-2">Por que não precisa mais?</label>
+        <select 
+          id="reason" 
+          formControlName="reason"
+          class="px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all text-gray-800 appearance-none"
+        >
+          <option value="" disabled selected>Selecione o motivo</option>
+          <option value="Já realizei">Já realizei em outro local</option>
+          <option value="Desisti">Desisti do procedimento</option>
+        </select>
+        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 mt-8 mr-8">
+          <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+        </div>
+      </div>
+
+      <!-- Question 3: Availability -->
+      <div class="flex flex-col">
+        <label class="text-sm font-bold text-gray-800 mb-3">Disponibilidade nos próximos 30 dias?</label>
+        <div class="flex space-x-4">
+          <label class="flex items-center space-x-2 cursor-pointer bg-gray-50 px-4 py-3 rounded-xl border border-gray-200 flex-1 hover:bg-blue-50 transition-colors">
+            <input type="radio" formControlName="availability" value="Sim" class="text-blue-900 focus:ring-blue-900 w-4 h-4">
+            <span class="text-gray-800 font-medium">Sim</span>
+          </label>
+          <label class="flex items-center space-x-2 cursor-pointer bg-gray-50 px-4 py-3 rounded-xl border border-gray-200 flex-1 hover:bg-blue-50 transition-colors">
+            <input type="radio" formControlName="availability" value="Não" class="text-blue-900 focus:ring-blue-900 w-4 h-4">
+            <span class="text-gray-800 font-medium">Não</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <button 
+        type="submit" 
+        [disabled]="updateForm.invalid || isSubmitted"
+        class="mt-4 w-full bg-blue-900 text-white font-bold py-4 px-4 rounded-xl shadow-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-800 active:scale-95 transition-all text-lg flex justify-center items-center"
+      >
+        <span *ngIf="!isSubmitted">Enviar Respostas</span>
+        <span *ngIf="isSubmitted" class="flex items-center">
+          <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Enviando...
+        </span>
+      </button>
+
+    </form>
+  </div>
+</div>

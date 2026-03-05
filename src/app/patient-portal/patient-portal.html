@@ -1,0 +1,13 @@
+<div class="bg-gray-50 min-h-screen">
+  @if (!isAuthorized) {
+    <app-identity-validation [patientToken]="patientToken" (onAuthorized)="handleAuthorization()"></app-identity-validation>
+  } @else {
+    @if (patientToken) {
+      <app-surgical-update-form [token]="patientToken"></app-surgical-update-form>
+    } @else {
+      <div class="text-center p-8 mt-10 bg-red-50 text-red-600 rounded-lg max-w-lg mx-auto shadow">
+        Token de acesso inválido ou não fornecido.
+      </div>
+    }
+  }
+</div>

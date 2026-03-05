@@ -1,0 +1,56 @@
+<div class="min-h-screen bg-gray-100 flex flex-col justify-center items-center p-4">
+  <div class="w-full max-w-sm bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
+    <!-- Header -->
+    <div class="bg-blue-900 text-white p-8 text-center">
+      <h1 class="text-2xl font-extrabold tracking-tight">Portal de Atualização Cirúrgica</h1>
+      <p class="text-sm text-blue-200 mt-2 font-semibold uppercase tracking-widest">HULW</p>
+    </div>
+
+    <!-- Form -->
+    <form [formGroup]="validationForm" (ngSubmit)="onSubmit()" class="flex flex-col p-8 space-y-6">
+      <!-- CPF Digits Field -->
+      <div class="flex flex-col">
+        <label for="cpf" class="text-sm font-bold text-gray-800 mb-2"
+          >3 primeiros dígitos do CPF</label
+        >
+        <input
+          id="cpf"
+          type="text"
+          formControlName="cpfDigits"
+          maxlength="3"
+          placeholder="Ex: 123"
+          class="px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all"
+        />
+      </div>
+
+      <!-- Birth Date Field -->
+      <div class="flex flex-col">
+        <label for="dob" class="text-sm font-bold text-gray-800 mb-2">Data de Nascimento</label>
+        <input
+          id="dob"
+          type="date"
+          formControlName="birthDate"
+          class="px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all text-gray-800"
+        />
+      </div>
+
+      <!-- Error Message -->
+      <div *ngIf="errorMessage" class="bg-red-50 text-red-700 p-3 rounded-xl border border-red-200 text-sm font-semibold flex items-center">
+        <!-- Ícone de Alerta -->
+        <svg class="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+        </svg>
+        <span>{{ errorMessage }}</span>
+      </div>
+
+      <!-- Submit Button -->
+      <button
+        type="submit"
+        [disabled]="validationForm.invalid || isLoading"
+        class="mt-2 w-full bg-blue-900 text-white font-bold py-4 px-4 rounded-xl shadow-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-800 active:scale-95 transition-all text-lg flex items-center justify-center"
+      >
+        {{ isLoading ? 'Validando...' : 'Acessar Formulário' }}
+      </button>
+    </form>
+  </div>
+</div>
