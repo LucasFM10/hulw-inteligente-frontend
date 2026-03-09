@@ -1,6 +1,5 @@
 import { Component, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { FilaService } from '../fila.service';
 import { AdminAuthService } from '../admin-auth.service';
 import { CONFIG } from '../constants';
@@ -71,7 +70,7 @@ const MOCK_PACIENTES: PacienteFila[] = [
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.css',
 })
@@ -83,9 +82,6 @@ export class AdminDashboard {
   // ── Estado da tabela ──────────────────────────────────────────────────────
   readonly pacientes: PacienteFila[] = MOCK_PACIENTES;
   sidebarOpen = false;
-
-  // ── URL base para os links gerados ────────────────────────────────────────
-  baseUrl = CONFIG.PORTAL_URL;
 
   // ── KPIs ──────────────────────────────────────────────────────────────────
   get totalNaFila(): number {
@@ -113,7 +109,7 @@ export class AdminDashboard {
 
   gerarLote(): void {
     this.isLoading = true;
-    this.filaService.gerarLoteBuscaAtiva(this.baseUrl).subscribe({
+    this.filaService.gerarLoteBuscaAtiva(CONFIG.PORTAL_URL).subscribe({
       next: (resposta) => {
         this.loteGerado = resposta;
         this.isLoading = false;
