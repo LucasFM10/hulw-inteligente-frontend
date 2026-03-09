@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FilaService } from '../fila.service';
 import { AdminAuthService } from '../admin-auth.service';
+import { CONFIG } from '../constants';
 
 // ── Tipagens ─────────────────────────────────────────────────────────────────
 
@@ -84,7 +85,7 @@ export class AdminDashboard {
   sidebarOpen = false;
 
   // ── URL base para os links gerados ────────────────────────────────────────
-  baseUrl = 'https://hulw-inteligente-frontend.vercel.app';
+  baseUrl = CONFIG.PORTAL_URL;
 
   // ── KPIs ──────────────────────────────────────────────────────────────────
   get totalNaFila(): number {

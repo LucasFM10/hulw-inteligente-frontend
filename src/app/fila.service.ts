@@ -1,12 +1,13 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { CONFIG } from './constants';
 
 @Injectable({
   providedIn: 'root'
 })
 export class FilaService {
-  private apiUrl = 'https://hulw-inteligente-backend.vercel.app/fila';
+  private apiUrl = `${CONFIG.API_URL}/fila`;
 
   constructor(private http: HttpClient) {}
 
@@ -29,7 +30,7 @@ export class FilaService {
     if (baseUrl) {
       body.base_url = baseUrl;
     }
-    return this.http.post<any[]>(`https://hulw-inteligente-backend.vercel.app/admin/gerar-lote-links`, body);
+    return this.http.post<any[]>(`${CONFIG.API_URL}/admin/gerar-lote-links`, body);
   }
 }
 

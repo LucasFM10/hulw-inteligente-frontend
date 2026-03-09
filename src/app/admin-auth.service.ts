@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
+import { CONFIG } from './constants';
 
 // ── Tipagens ─────────────────────────────────────────────────────────────────
 
@@ -19,7 +20,7 @@ export interface AdminLoginResponse {
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
-const API_BASE = 'https://hulw-inteligente-backend.vercel.app';
+const API_BASE = CONFIG.API_URL;
 const TOKEN_KEY = 'admin_access_token';
 const USER_EMAIL_KEY = 'admin_user_email';
 
