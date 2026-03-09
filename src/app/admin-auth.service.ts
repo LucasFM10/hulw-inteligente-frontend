@@ -19,7 +19,7 @@ export interface AdminLoginResponse {
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = 'https://hulw-inteligente-backend.vercel.app';
 const TOKEN_KEY = 'admin_access_token';
 const USER_EMAIL_KEY = 'admin_user_email';
 

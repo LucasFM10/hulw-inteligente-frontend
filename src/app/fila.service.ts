@@ -6,7 +6,7 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class FilaService {
-  private apiUrl = 'http://localhost:8000/fila';
+  private apiUrl = 'https://hulw-inteligente-backend.vercel.app/fila';
 
   constructor(private http: HttpClient) {}
 
@@ -24,9 +24,12 @@ export class FilaService {
     return this.http.post(`${this.apiUrl}/paciente/validar-identidade`, payload, { headers });
   }
 
-  gerarLoteBuscaAtiva(): Observable<any[]> {
-    console.log('[FilaService] Iniciando chamada HTTP POST para http://localhost:8000/admin/gerar-lote-links...');
-    return this.http.post<any[]>(`http://localhost:8000/admin/gerar-lote-links`, {});
+  gerarLoteBuscaAtiva(baseUrl?: string): Observable<any[]> {
+    const body: any = {};
+    if (baseUrl) {
+      body.base_url = baseUrl;
+    }
+    return this.http.post<any[]>(`https://hulw-inteligente-backend.vercel.app/admin/gerar-lote-links`, body);
   }
 }
 
