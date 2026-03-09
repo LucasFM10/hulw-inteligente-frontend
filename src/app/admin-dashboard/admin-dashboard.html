@@ -1,69 +1,505 @@
-<div class="min-h-screen bg-gray-50 flex flex-col items-center py-10 px-4">
-  <div class="w-full max-w-5xl bg-white shadow-xl rounded-2xl overflow-hidden">
-    <!-- Header -->
-    <div class="bg-white border-b border-gray-100 px-8 py-6">
-      <h1 class="text-2xl font-bold text-gray-800 tracking-tight">
-        Painel de Gestão - Bloco Cirúrgico HULW
-      </h1>
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     Admin Dashboard — HULW Bloco Cirúrgico
+     Layout: sidebar fixo (desktop) + área de conteúdo expansível
+══════════════════════════════════════════════════════════════════════════════ -->
+<div class="flex min-h-screen bg-slate-50 font-sans">
+  <!-- ── SIDEBAR ─────────────────────────────────────────────────────────── -->
+  <aside class="hidden md:flex w-64 flex-shrink-0 flex-col bg-slate-800 text-white sticky top-0 h-screen overflow-y-auto">
+    <!-- Logo / título -->
+    <div class="flex items-center gap-3 px-6 py-5 border-b border-slate-700">
+      <!-- Ícone hospitalar simples -->
+      <div class="flex items-center justify-center w-9 h-9 rounded-lg bg-sky-500 font-bold text-sm">
+        ✚
+      </div>
+      <div>
+        <p class="text-sm font-bold leading-none tracking-wide">HULW</p>
+        <p class="text-xs text-slate-400 leading-none mt-0.5">Bloco Cirúrgico</p>
+      </div>
     </div>
 
-    <!-- Actions -->
-    <div class="px-8 py-6 bg-gray-50 flex items-center justify-between">
-      <div class="flex-1">
-        <button
-          (click)="gerarLote()"
-          [disabled]="isLoading"
-          class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-70 disabled:cursor-not-allowed transition-colors duration-200"
+    <!-- Navegação -->
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <!-- Dashboard (ativo) -->
+      <a
+        href="#"
+        class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium bg-slate-700 text-white"
+      >
+        <svg
+          class="h-5 w-5 text-sky-400"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
         >
-          {{ isLoading ? 'Gerando...' : 'Gerar e Disparar Lote de Busca Ativa' }}
-        </button>
-      </div>
-    </div>
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z"
+          />
+        </svg>
+        Dashboard
+      </a>
 
-    <!-- Table -->
-    <div *ngIf="loteGerado.length > 0" class="px-8 pb-8">
-      <div class="mt-4 overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
-        <table class="min-w-full divide-y divide-gray-300">
-          <thead class="bg-gray-50">
-            <tr>
-              <th
-                scope="col"
-                class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6"
-              >
-                Nome do Paciente
-              </th>
-              <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                Telefone
-              </th>
-              <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                Link de Acesso
-              </th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-200 bg-white">
-            <tr
-              *ngFor="let item of loteGerado"
-              class="hover:bg-gray-50 transition-colors duration-150"
-            >
-              <td
-                class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6"
-              >
-                {{ item.nome_completo }}
-              </td>
-              <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ item.telefone }}</td>
-              <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                <a
-                  [href]="item.link_whatsapp"
-                  target="_blank"
-                  class="text-blue-600 hover:text-blue-900 font-medium"
-                >
-                  Acessar Portal
-                </a>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <!-- Gerar Busca Ativa -->
+      <a
+        href="#gerar-lote"
+        class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+      >
+        <svg
+          class="h-5 w-5"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"
+          />
+        </svg>
+        Gerar Busca Ativa
+      </a>
+
+      <!-- Fila de Espera (fictício) -->
+      <a
+        href="#"
+        class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+      >
+        <svg
+          class="h-5 w-5"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"
+          />
+        </svg>
+        Fila de Espera
+      </a>
+
+      <!-- Relatórios (fictício) -->
+      <a
+        href="#"
+        class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+      >
+        <svg
+          class="h-5 w-5"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"
+          />
+        </svg>
+        Relatórios
+      </a>
+    </nav>
+
+    <!-- Botão de logout no rodapé do sidebar -->
+    <div class="px-3 pb-5 border-t border-slate-700 pt-4">
+      <button
+        (click)="logout()"
+        class="w-full flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-slate-400 hover:bg-slate-700 hover:text-red-400 transition-colors text-left"
+      >
+        <svg
+          class="h-5 w-5"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15m-3 0-3-3m0 0 3-3m-3 3H15"
+          />
+        </svg>
+        Sair da sessão
+      </button>
     </div>
+  </aside>
+
+  <!-- ── CONTEÚDO PRINCIPAL ─────────────────────────────────────────────── -->
+  <div class="flex-1 flex flex-col min-w-0">
+    <!-- Topbar -->
+    <header
+      class="sticky top-0 z-10 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between"
+    >
+      <div>
+        <h1 class="text-lg font-bold text-slate-800 leading-none">Painel de Gestão</h1>
+        <p class="text-xs text-slate-400 mt-0.5">Fila Cirúrgica — HULW</p>
+      </div>
+      <!-- Logout (mobile / alternativo) -->
+      <button
+        (click)="logout()"
+        class="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-red-600 transition-colors"
+      >
+        <svg
+          class="h-3.5 w-3.5"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="2"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15m-3 0-3-3m0 0 3-3m-3 3H15"
+          />
+        </svg>
+        Sair
+      </button>
+    </header>
+
+    <!-- Corpo scrollável -->
+    <main class="flex-1 px-6 py-8 space-y-8 overflow-y-auto">
+      <!-- ── GRID DE KPIs ──────────────────────────────────────────────── -->
+      <section>
+        <h2 class="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-4">
+          Resumo da Fila
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <!-- KPI: Total -->
+          <div
+            class="rounded-xl bg-white border border-slate-200 p-5 flex items-start gap-4 shadow-sm"
+          >
+            <div
+              class="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-lg bg-sky-50 text-sky-600"
+            >
+              <!-- people icon -->
+              <svg
+                class="h-5 w-5"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"
+                />
+              </svg>
+            </div>
+            <div>
+              <p class="text-xs text-slate-400 font-medium">Total na Fila</p>
+              <p class="text-3xl font-bold text-slate-800 leading-none mt-1">{{ totalNaFila }}</p>
+            </div>
+          </div>
+
+          <!-- KPI: Pendentes -->
+          <div
+            class="rounded-xl bg-white border border-slate-200 p-5 flex items-start gap-4 shadow-sm"
+          >
+            <div
+              class="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-lg bg-yellow-50 text-yellow-600"
+            >
+              <svg
+                class="h-5 w-5"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                />
+              </svg>
+            </div>
+            <div>
+              <p class="text-xs text-slate-400 font-medium">Pendentes</p>
+              <p class="text-3xl font-bold text-yellow-500 leading-none mt-1">
+                {{ totalPendentes }}
+              </p>
+            </div>
+          </div>
+
+          <!-- KPI: Confirmados -->
+          <div
+            class="rounded-xl bg-white border border-slate-200 p-5 flex items-start gap-4 shadow-sm"
+          >
+            <div
+              class="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-lg bg-green-50 text-green-600"
+            >
+              <svg
+                class="h-5 w-5"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                />
+              </svg>
+            </div>
+            <div>
+              <p class="text-xs text-slate-400 font-medium">Confirmados</p>
+              <p class="text-3xl font-bold text-green-600 leading-none mt-1">
+                {{ totalConfirmados }}
+              </p>
+            </div>
+          </div>
+
+          <!-- KPI: Cancelados -->
+          <div
+            class="rounded-xl bg-white border border-slate-200 p-5 flex items-start gap-4 shadow-sm"
+          >
+            <div
+              class="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-lg bg-red-50 text-red-600"
+            >
+              <svg
+                class="h-5 w-5"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                />
+              </svg>
+            </div>
+            <div>
+              <p class="text-xs text-slate-400 font-medium">Cancelados</p>
+              <p class="text-3xl font-bold text-red-500 leading-none mt-1">{{ totalCancelados }}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── TABELA DE PACIENTES ─────────────────────────────────────────── -->
+      <section>
+        <div class="rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden">
+          <!-- Cabeçalho do card -->
+          <div
+            class="px-6 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-3"
+          >
+            <div>
+              <h2 class="text-sm font-semibold text-slate-800">Fila de Espera Bruta</h2>
+              <p class="text-xs text-slate-400">Todos os pacientes cadastrados no sistema</p>
+            </div>
+            <!-- Botão Gerar Lote -->
+            <div id="gerar-lote">
+              <button
+                (click)="gerarLote()"
+                [disabled]="isLoading"
+                class="inline-flex items-center gap-2 rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+              >
+                <!-- spinner when loading -->
+                <svg
+                  *ngIf="isLoading"
+                  class="h-4 w-4 animate-spin"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    class="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                  ></circle>
+                  <path
+                    class="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                  ></path>
+                </svg>
+                <svg
+                  *ngIf="!isLoading"
+                  class="h-4 w-4"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"
+                  />
+                </svg>
+                {{ isLoading ? 'Gerando lote...' : 'Gerar Busca Ativa' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Tabela -->
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-100">
+              <thead class="bg-slate-50">
+                <tr>
+                  <th
+                    scope="col"
+                    class="py-3 pl-6 pr-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400"
+                  >
+                    Nome do Paciente
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400"
+                  >
+                    CPF Mascarado
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400"
+                  >
+                    Procedimento Indicado
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400"
+                  >
+                    Data de Inserção
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400"
+                  >
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 bg-white">
+                <tr
+                  *ngFor="let paciente of pacientes; let i = index"
+                  class="hover:bg-slate-50 transition-colors"
+                >
+                  <!-- Nome -->
+                  <td class="whitespace-nowrap py-4 pl-6 pr-3">
+                    <div class="flex items-center gap-3">
+                      <!-- Avatar com inicial -->
+                      <div
+                        class="flex-shrink-0 h-8 w-8 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center text-xs font-bold"
+                      >
+                        {{ paciente.nome_completo.charAt(0) }}
+                      </div>
+                      <p class="text-sm font-medium text-slate-800">{{ paciente.nome_completo }}</p>
+                    </div>
+                  </td>
+                  <!-- CPF -->
+                  <td class="whitespace-nowrap px-3 py-4 text-sm font-mono text-slate-500">
+                    {{ paciente.cpf_mascarado }}
+                  </td>
+                  <!-- Procedimento -->
+                  <td class="px-3 py-4 text-sm text-slate-600 max-w-xs">
+                    {{ paciente.procedimento_indicado }}
+                  </td>
+                  <!-- Data -->
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-slate-500">
+                    {{ paciente.data_insercao | date: 'dd/MM/yyyy' }}
+                  </td>
+                  <!-- Status Badge -->
+                  <td class="whitespace-nowrap px-3 py-4">
+                    <span
+                      [ngClass]="badgeClasses(paciente.status_busca_ativa)"
+                      class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset"
+                    >
+                      {{ badgeLabel(paciente.status_busca_ativa) }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Rodapé da tabela -->
+          <div
+            class="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-between"
+          >
+            <p class="text-xs text-slate-400">
+              Exibindo
+              <span class="font-semibold text-slate-600">{{ pacientes.length }}</span> paciente(s) —
+              dados mock (desenvolvimento)
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── RESULTADO DO LOTE (aparece após gerar) ───────────────────── -->
+      <section *ngIf="loteGerado.length > 0">
+        <div class="rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden">
+          <div class="px-6 py-4 border-b border-slate-100 bg-green-50">
+            <h2 class="text-sm font-semibold text-green-800">✅ Lote Gerado com Sucesso</h2>
+            <p class="text-xs text-green-600">Links prontos para disparar via WhatsApp</p>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-100">
+              <thead class="bg-slate-50">
+                <tr>
+                  <th
+                    scope="col"
+                    class="py-3 pl-6 pr-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400"
+                  >
+                    Nome
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400"
+                  >
+                    Telefone
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400"
+                  >
+                    Link de Acesso
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 bg-white">
+                <tr *ngFor="let item of loteGerado" class="hover:bg-slate-50 transition-colors">
+                  <td class="whitespace-nowrap py-4 pl-6 pr-3 text-sm font-medium text-slate-800">
+                    {{ item.nome_completo }}
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-slate-500">
+                    {{ item.telefone }}
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm">
+                    <a
+                      [href]="item.link_whatsapp"
+                      target="_blank"
+                      class="text-sky-600 hover:text-sky-900 font-medium hover:underline"
+                    >
+                      Abrir WhatsApp ↗
+                    </a>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
   </div>
 </div>
