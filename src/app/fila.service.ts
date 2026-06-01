@@ -32,5 +32,9 @@ export class FilaService {
     }
     return this.http.post<any[]>(`${CONFIG.API_URL}/admin/gerar-lote-links`, body);
   }
+
+  getTodosPacientes(): Observable<any[]> {
+    return this.http.get<any[]>(`${CONFIG.API_URL}/admin/pacientes`);
+  }
 }
 

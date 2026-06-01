@@ -317,9 +317,24 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100 bg-white">
+                <tr *ngIf="isLoadingPacientes">
+                  <td colspan="5" class="py-8 text-center text-sm text-slate-500">
+                    <svg class="animate-spin h-5 w-5 mx-auto text-sky-500 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    Carregando pacientes...
+                  </td>
+                </tr>
+                <tr *ngIf="!isLoadingPacientes && pacientes.length === 0">
+                  <td colspan="5" class="py-8 text-center text-sm text-slate-500">
+                    Nenhum paciente cadastrado na fila.
+                  </td>
+                </tr>
                 <tr
                   *ngFor="let paciente of pacientes; let i = index"
                   class="hover:bg-slate-50 transition-colors"
+                  [hidden]="isLoadingPacientes"
                 >
                   <!-- Nome -->
                   <td class="whitespace-nowrap py-4 pl-6 pr-3">
@@ -343,7 +358,7 @@
                   </td>
                   <!-- Data -->
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-slate-500">
-                    {{ paciente.data_insercao | date: 'dd/MM/yyyy' }}
+                    {{ paciente.data_insercao_fila | date: 'dd/MM/yyyy' }}
                   </td>
                   <!-- Status Badge -->
                   <td class="whitespace-nowrap px-3 py-4">
@@ -365,8 +380,7 @@
           >
             <p class="text-xs text-slate-400">
               Exibindo
-              <span class="font-semibold text-slate-600">{{ pacientes.length }}</span> paciente(s) —
-              dados mock (desenvolvimento)
+              <span class="font-semibold text-slate-600">{{ pacientes.length }}</span> paciente(s)
             </p>
           </div>
         </div>

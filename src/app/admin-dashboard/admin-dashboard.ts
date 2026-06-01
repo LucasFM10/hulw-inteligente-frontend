@@ -1,4 +1,4 @@
-import { Component, ChangeDetectorRef, inject } from '@angular/core';
+import { Component, ChangeDetectorRef, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FilaService } from '../fila.service';
 import { AdminAuthService } from '../admin-auth.service';
@@ -16,54 +16,11 @@ export interface PacienteFila {
   nome_completo: string;
   cpf_mascarado: string;
   procedimento_indicado: string;
-  data_insercao: string;
+  data_insercao_fila: string;
   status_busca_ativa: StatusBuscaAtiva;
 }
 
-// ── Mock ─────────────────────────────────────────────────────────────────────
-
-const MOCK_PACIENTES: PacienteFila[] = [
-  {
-    id: '1',
-    nome_completo: 'Maria das Graças Oliveira',
-    cpf_mascarado: '***.***.***-82',
-    procedimento_indicado: 'Colecistectomia Laparoscópica',
-    data_insercao: '2025-01-15',
-    status_busca_ativa: 'CONFIRMADO_PACIENTE',
-  },
-  {
-    id: '2',
-    nome_completo: 'João Pedro Almeida',
-    cpf_mascarado: '***.***.***-44',
-    procedimento_indicado: 'Herniorrafia Inguinal',
-    data_insercao: '2025-02-03',
-    status_busca_ativa: 'PENDENTE_BUSCA_ATIVA',
-  },
-  {
-    id: '3',
-    nome_completo: 'Ana Sofia Rodrigues',
-    cpf_mascarado: '***.***.***-11',
-    procedimento_indicado: 'Apendicectomia',
-    data_insercao: '2025-02-18',
-    status_busca_ativa: 'PENDENTE_BUSCA_ATIVA',
-  },
-  {
-    id: '4',
-    nome_completo: 'Carlos Eduardo Mendes',
-    cpf_mascarado: '***.***.***-77',
-    procedimento_indicado: 'Artroscopia do Joelho',
-    data_insercao: '2025-03-01',
-    status_busca_ativa: 'CANCELADO_PACIENTE',
-  },
-  {
-    id: '5',
-    nome_completo: 'Fernanda Costa Lima',
-    cpf_mascarado: '***.***.***-29',
-    procedimento_indicado: 'Tireoidectomia Total',
-    data_insercao: '2025-03-05',
-    status_busca_ativa: 'PENDENTE_BUSCA_ATIVA',
-  },
-];
+// ── Dados Mock removidos, fetching dinâmico implementado ──────────────
 
 // ── Componente ────────────────────────────────────────────────────────────────
 
@@ -74,14 +31,35 @@ const MOCK_PACIENTES: PacienteFila[] = [
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.css',
 })
-export class AdminDashboard {
+export class AdminDashboard implements OnInit {
   private readonly filaService = inject(FilaService);
   private readonly authService = inject(AdminAuthService);
   private readonly cdr = inject(ChangeDetectorRef);
 
   // ── Estado da tabela ──────────────────────────────────────────────────────
-  readonly pacientes: PacienteFila[] = MOCK_PACIENTES;
+  pacientes: PacienteFila[] = [];
+  isLoadingPacientes = true;
   sidebarOpen = false;
+
+  ngOnInit(): void {
+    this.carregarPacientes();
+  }
+
+  carregarPacientes(): void {
+    this.isLoadingPacientes = true;
+    this.filaService.getTodosPacientes().subscribe({
+      next: (dados) => {
+        this.pacientes = dados;
+        this.isLoadingPacientes = false;
+        this.cdr.detectChanges();
+      },
+      error: (erro) => {
+        console.error('Erro ao carregar pacientes:', erro);
+        this.isLoadingPacientes = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
 
   // ── KPIs ──────────────────────────────────────────────────────────────────
   get totalNaFila(): number {
