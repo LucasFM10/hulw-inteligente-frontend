@@ -1,0 +1,145 @@
+<div class="flex min-h-screen bg-slate-50 font-sans">
+  <aside class="hidden md:flex w-64 flex-shrink-0 flex-col bg-slate-800 text-white sticky top-0 h-screen overflow-y-auto">
+    <div class="flex items-center gap-3 px-6 py-5 border-b border-slate-700">
+      <div class="flex items-center justify-center w-9 h-9 rounded-lg bg-sky-500 font-bold text-sm">✚</div>
+      <div>
+        <p class="text-sm font-bold leading-none tracking-wide">HULW</p>
+        <p class="text-xs text-slate-400 leading-none mt-0.5">Bloco Cirúrgico</p>
+      </div>
+    </div>
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <a routerLink="/admin" class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition-colors">
+        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" /></svg>
+        Dashboard
+      </a>
+      <a routerLink="/admin/agenda" class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium bg-slate-700 text-white transition-colors">
+        <svg class="h-5 w-5 text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" /></svg>
+        Agenda Cirúrgica
+      </a>
+    </nav>
+  </aside>
+  <main class="flex-1 flex flex-col h-screen overflow-hidden">
+    <div class="flex-1 overflow-y-auto">
+<div class="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-9xl mx-auto">
+  <!-- Header / Breadcrumb -->
+  <div class="mb-8">
+    <button (click)="voltar()" class="text-sm font-medium text-sky-600 hover:text-sky-800 mb-2 flex items-center">
+      &larr; Voltar para Agendas
+    </button>
+    <div class="sm:flex sm:items-center sm:justify-between">
+      <div class="sm:flex-auto flex items-center gap-3">
+        <h1 class="text-2xl font-bold text-slate-900">Agenda: {{ agenda?.data | date:'dd/MM/yyyy' }}</h1>
+        <span class="inline-flex items-center rounded-md px-2.5 py-1 text-sm font-medium ring-1 ring-inset" [ngClass]="getBadgeClass(agenda?.status || '')">
+          {{ agenda?.status }}
+        </span>
+      </div>
+      <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none flex gap-3" *ngIf="agenda?.status === 'RASCUNHO'">
+        <button (click)="consolidarAgenda()" [disabled]="loading" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md text-sm transition-colors shadow-sm disabled:opacity-50">
+          Consolidar Agenda
+        </button>
+        <button (click)="cancelarAgenda()" [disabled]="loading" class="bg-red-50 hover:bg-red-100 text-red-700 font-medium py-2 px-4 rounded-md border border-red-200 text-sm transition-colors shadow-sm disabled:opacity-50">
+          Cancelar Agenda
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="erro" class="mb-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm">
+    {{ erro }}
+  </div>
+  <div *ngIf="sucesso" class="mb-4 p-4 bg-green-50 border-l-4 border-green-500 text-green-700 text-sm">
+    {{ sucesso }}
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    
+    <!-- LADO ESQUERDO: Pacientes Elegíveis -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[600px]">
+      <div class="p-5 border-b border-slate-100 bg-slate-50/50">
+        <h2 class="text-lg font-semibold text-slate-800">Fila de Pacientes Elegíveis</h2>
+        <p class="text-sm text-slate-500 mb-4">Apenas pacientes confirmados.</p>
+        <div class="flex gap-2">
+          <input type="text" [(ngModel)]="busca" placeholder="Buscar por nome ou procedimento..." (keyup.enter)="aplicarBuscaElegiveis()" class="w-full text-sm border-slate-200 rounded-md py-1.5 px-3 focus:ring-sky-500 focus:border-sky-500">
+          <button (click)="aplicarBuscaElegiveis()" class="bg-slate-800 hover:bg-slate-900 text-white font-medium py-1.5 px-3 rounded-md text-sm">
+            Buscar
+          </button>
+        </div>
+      </div>
+      
+      <div class="overflow-y-auto flex-1 p-0">
+        <div *ngIf="loading && elegiveis.length === 0" class="p-8 text-center text-slate-500">Carregando pacientes...</div>
+        <div *ngIf="!loading && elegiveis.length === 0" class="p-8 text-center text-slate-500">Nenhum paciente elegível encontrado.</div>
+        
+        <ul class="divide-y divide-slate-100">
+          <li *ngFor="let paciente of elegiveis" class="p-4 hover:bg-slate-50 transition-colors flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="font-semibold text-slate-900">{{ paciente.paciente_nome }}</span>
+                <span *ngIf="paciente.medida_judicial" class="inline-flex items-center rounded-md bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700 ring-1 ring-inset ring-purple-600/20">⚖️ MJ</span>
+                <span *ngIf="paciente.prioridade === 'ONC'" class="inline-flex items-center rounded-md bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/20">Oncológico</span>
+                <span *ngIf="paciente.prioridade === 'BRE'" class="inline-flex items-center rounded-md bg-orange-50 px-2 py-0.5 text-xs font-medium text-orange-700 ring-1 ring-inset ring-orange-600/20">Breve Retorno</span>
+              </div>
+              <div class="text-sm text-slate-600 mb-1">
+                {{ paciente.procedimento || 'Procedimento Padrão' }} <span class="text-slate-400">({{ paciente.especialidade || 'Sem Esp.' }})</span>
+              </div>
+              <div class="text-xs text-slate-500">
+                Espera: <span [class.text-red-600]="paciente.tempo_espera_dias > 180" [class.font-semibold]="paciente.tempo_espera_dias > 180">{{ paciente.tempo_espera_dias }} dias</span>
+              </div>
+            </div>
+            
+            <button (click)="adicionarItem(paciente)" [disabled]="agenda?.status !== 'RASCUNHO' || loading" class="shrink-0 bg-white hover:bg-slate-50 text-sky-600 font-medium py-1.5 px-3 rounded-md border border-slate-200 text-sm shadow-sm transition-colors disabled:opacity-50">
+              Adicionar &rarr;
+            </button>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- LADO DIREITO: Itens da Agenda -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[600px]">
+      <div class="p-5 border-b border-slate-100 bg-slate-50/50">
+        <h2 class="text-lg font-semibold text-slate-800">Cirurgias Agendadas</h2>
+        <p class="text-sm text-slate-500">
+          Turno: <span class="font-medium text-slate-700">{{ agenda?.turno }}</span> |
+          Sala: <span class="font-medium text-slate-700">{{ agenda?.sala_nome || 'Não definida' }}</span>
+        </p>
+      </div>
+      
+      <div class="overflow-y-auto flex-1 p-0">
+        <div *ngIf="loading && !agenda?.itens?.length" class="p-8 text-center text-slate-500">Carregando itens...</div>
+        <div *ngIf="!loading && !agenda?.itens?.length" class="p-8 text-center text-slate-500 flex flex-col items-center justify-center h-full">
+          <svg class="w-12 h-12 text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+          <p>Nenhum paciente alocado nesta agenda.</p>
+          <p class="text-xs mt-1">Adicione pacientes usando a lista ao lado.</p>
+        </div>
+        
+        <ul class="divide-y divide-slate-100">
+          <li *ngFor="let item of agenda?.itens" class="p-4 hover:bg-slate-50 transition-colors group">
+            <div class="flex justify-between items-start mb-2">
+              <span class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset" [ngClass]="getBadgeClass(item.status)">
+                {{ item.status }}
+              </span>
+              <button *ngIf="agenda?.status === 'RASCUNHO'" (click)="removerItem(item.id)" [disabled]="loading" class="text-slate-400 hover:text-red-600 transition-colors disabled:opacity-50" title="Remover da agenda">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+              </button>
+            </div>
+            
+            <div class="font-medium text-slate-900 mb-1">{{ item.paciente_nome }}</div>
+            <div class="text-sm text-slate-600 mb-2">{{ item.procedimento || 'Procedimento não informado' }}</div>
+            
+            <div class="flex gap-3 text-xs text-slate-500">
+              <div class="flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                {{ item.horario_inicio || '--:--' }} - {{ item.horario_fim || '--:--' }}
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</div>
+    </div>
+  </main>
+</div>

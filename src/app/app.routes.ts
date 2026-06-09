@@ -3,6 +3,8 @@ import { AdminDashboard } from './admin-dashboard/admin-dashboard';
 import { PatientPortalComponent } from './patient-portal/patient-portal';
 import { AdminLoginComponent } from './admin-login/admin-login';
 import { adminAuthGuard } from './admin-auth.guard';
+import { AgendaList } from './admin-agenda/agenda-list/agenda-list';
+import { AgendaDetail } from './admin-agenda/agenda-detail/agenda-detail';
 
 export const routes: Routes = [
   // Tela de login (pública)
@@ -12,6 +14,16 @@ export const routes: Routes = [
   {
     path: 'admin',
     component: AdminDashboard,
+    canActivate: [adminAuthGuard],
+  },
+  {
+    path: 'admin/agenda',
+    component: AgendaList,
+    canActivate: [adminAuthGuard],
+  },
+  {
+    path: 'admin/agenda/:id',
+    component: AgendaDetail,
     canActivate: [adminAuthGuard],
   },
 

@@ -36,5 +36,29 @@ export class FilaService {
   getTodosPacientes(): Observable<any[]> {
     return this.http.get<any[]>(`${CONFIG.API_URL}/admin/pacientes`);
   }
+
+  getFilaAdmin(filtros: any = {}): Observable<any[]> {
+    // Monta os parâmetros para a querystring
+    const params = new URLSearchParams();
+    for (const key in filtros) {
+      if (filtros[key] !== null && filtros[key] !== undefined && filtros[key] !== '') {
+        params.append(key, filtros[key]);
+      }
+    }
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return this.http.get<any[]>(`${CONFIG.API_URL}/admin/fila${query}`);
+  }
+
+  getFilaResumo(): Observable<any> {
+    return this.http.get<any>(`${CONFIG.API_URL}/admin/fila/resumo`);
+  }
+
+  atualizarEntradaFila(id: string, payload: any): Observable<any> {
+    return this.http.patch<any>(`${CONFIG.API_URL}/admin/fila/${id}`, payload);
+  }
+
+  getHistorico(id: string): Observable<any[]> {
+    return this.http.get<any[]>(`${CONFIG.API_URL}/admin/fila/${id}/historico`);
+  }
 }
 

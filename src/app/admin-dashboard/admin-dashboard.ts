@@ -3,31 +3,54 @@ import { CommonModule } from '@angular/common';
 import { FilaService } from '../fila.service';
 import { AdminAuthService } from '../admin-auth.service';
 import { CONFIG } from '../constants';
+import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 
 // ── Tipagens ─────────────────────────────────────────────────────────────────
 
 export type StatusBuscaAtiva =
-  | 'PENDENTE_BUSCA_ATIVA'
+  | 'PENDENTE'
+  | 'MENSAGEM_ENVIADA'
   | 'CONFIRMADO_PACIENTE'
   | 'CANCELADO_PACIENTE';
 
-export interface PacienteFila {
+export type StatusFila = 'ATIVO' | 'INATIVO' | 'REMOVIDO' | 'REINTEGRADO';
+export type PrioridadeFila = 'SEM' | 'ONC' | 'BRE';
+
+export interface FilaAdminResponse {
   id: string;
-  nome_completo: string;
-  cpf_mascarado: string;
-  procedimento_indicado: string;
-  data_insercao_fila: string;
+  paciente_nome: string;
+  prontuario: string | null;
+  telefone: string;
+  especialidade: string | null;
+  procedimento: string | null;
+  medico: string | null;
+  prioridade: PrioridadeFila;
+  medida_judicial: boolean;
   status_busca_ativa: StatusBuscaAtiva;
+  status_fila: StatusFila;
+  ativo: boolean;
+  data_entrada: string;
+  tempo_espera_dias: number;
 }
 
-// ── Dados Mock removidos, fetching dinâmico implementado ──────────────
+export interface FilaAdminResumo {
+  total: number;
+  ativos: number;
+  pendentes: number;
+  mensagem_enviada: number;
+  confirmados: number;
+  cancelados: number;
+  oncologicos: number;
+  medida_judicial: number;
+}
 
 // ── Componente ────────────────────────────────────────────────────────────────
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.css',
 })
@@ -37,17 +60,40 @@ export class AdminDashboard implements OnInit {
   private readonly cdr = inject(ChangeDetectorRef);
 
   // ── Estado da tabela ──────────────────────────────────────────────────────
-  pacientes: PacienteFila[] = [];
+  pacientes: FilaAdminResponse[] = [];
+  resumo: FilaAdminResumo | null = null;
   isLoadingPacientes = true;
   sidebarOpen = false;
 
+  // Filtros
+  filtroStatusBusca: string = '';
+  filtroStatusFila: string = 'ATIVO';
+
   ngOnInit(): void {
+    this.carregarResumo();
     this.carregarPacientes();
+  }
+
+  carregarResumo(): void {
+    this.filaService.getFilaResumo().subscribe({
+      next: (dados) => {
+        this.resumo = dados;
+        this.cdr.detectChanges();
+      },
+      error: (erro) => {
+        console.error('Erro ao carregar resumo:', erro);
+      }
+    });
   }
 
   carregarPacientes(): void {
     this.isLoadingPacientes = true;
-    this.filaService.getTodosPacientes().subscribe({
+    
+    const filtros: any = {};
+    if (this.filtroStatusBusca) filtros.status_busca = this.filtroStatusBusca;
+    if (this.filtroStatusFila) filtros.status_fila = this.filtroStatusFila;
+
+    this.filaService.getFilaAdmin(filtros).subscribe({
       next: (dados) => {
         this.pacientes = dados;
         this.isLoadingPacientes = false;
@@ -61,24 +107,8 @@ export class AdminDashboard implements OnInit {
     });
   }
 
-  // ── KPIs ──────────────────────────────────────────────────────────────────
-  get totalNaFila(): number {
-    return this.pacientes.length;
-  }
-  get totalPendentes(): number {
-    return this.pacientes.filter(
-      (p) => p.status_busca_ativa === 'PENDENTE_BUSCA_ATIVA'
-    ).length;
-  }
-  get totalConfirmados(): number {
-    return this.pacientes.filter(
-      (p) => p.status_busca_ativa === 'CONFIRMADO_PACIENTE'
-    ).length;
-  }
-  get totalCancelados(): number {
-    return this.pacientes.filter(
-      (p) => p.status_busca_ativa === 'CANCELADO_PACIENTE'
-    ).length;
+  aplicarFiltros(): void {
+    this.carregarPacientes();
   }
 
   // ── Lote de busca ativa ───────────────────────────────────────────────────
@@ -91,6 +121,9 @@ export class AdminDashboard implements OnInit {
       next: (resposta) => {
         this.loteGerado = resposta;
         this.isLoading = false;
+        // Atualiza a tabela e resumo logo após gerar lote
+        this.carregarResumo();
+        this.carregarPacientes();
         this.cdr.detectChanges();
       },
       error: (erro) => {
@@ -107,25 +140,24 @@ export class AdminDashboard implements OnInit {
     this.authService.logout();
   }
 
-  // ── Badge helper ─────────────────────────────────────────────────────────
+  // ── Helpers de UI ─────────────────────────────────────────────────────────
   badgeClasses(status: StatusBuscaAtiva): string {
     const map: Record<StatusBuscaAtiva, string> = {
-      CONFIRMADO_PACIENTE:
-        'bg-green-100 text-green-800 ring-green-600/20',
-      PENDENTE_BUSCA_ATIVA:
-        'bg-yellow-100 text-yellow-800 ring-yellow-600/20',
-      CANCELADO_PACIENTE:
-        'bg-red-100 text-red-800 ring-red-600/20',
+      CONFIRMADO_PACIENTE: 'bg-green-100 text-green-800 ring-green-600/20',
+      PENDENTE: 'bg-yellow-100 text-yellow-800 ring-yellow-600/20',
+      CANCELADO_PACIENTE: 'bg-red-100 text-red-800 ring-red-600/20',
+      MENSAGEM_ENVIADA: 'bg-blue-100 text-blue-800 ring-blue-600/20',
     };
-    return map[status];
+    return map[status] || 'bg-slate-100 text-slate-800 ring-slate-600/20';
   }
 
   badgeLabel(status: StatusBuscaAtiva): string {
     const map: Record<StatusBuscaAtiva, string> = {
       CONFIRMADO_PACIENTE: 'Confirmado',
-      PENDENTE_BUSCA_ATIVA: 'Pendente',
+      PENDENTE: 'Pendente',
       CANCELADO_PACIENTE: 'Cancelado',
+      MENSAGEM_ENVIADA: 'Msg Enviada',
     };
-    return map[status];
+    return map[status] || status;
   }
 }

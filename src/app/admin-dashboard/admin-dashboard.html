@@ -41,7 +41,23 @@
         Dashboard
       </a>
 
-
+      <!-- Agenda Cirúrgica -->
+      <a
+        routerLink="/admin/agenda"
+        class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+      >
+        <svg
+          class="h-5 w-5"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+        </svg>
+        Agenda Cirúrgica
+      </a>
 
     </nav>
 
@@ -136,7 +152,7 @@
             </div>
             <div>
               <p class="text-xs text-slate-400 font-medium">Total na Fila</p>
-              <p class="text-3xl font-bold text-slate-800 leading-none mt-1">{{ totalNaFila }}</p>
+              <p class="text-3xl font-bold text-slate-800 leading-none mt-1">{{ resumo?.total || 0 }}</p>
             </div>
           </div>
 
@@ -165,7 +181,7 @@
             <div>
               <p class="text-xs text-slate-400 font-medium">Pendentes</p>
               <p class="text-3xl font-bold text-yellow-500 leading-none mt-1">
-                {{ totalPendentes }}
+                {{ resumo?.pendentes || 0 }}
               </p>
             </div>
           </div>
@@ -195,7 +211,7 @@
             <div>
               <p class="text-xs text-slate-400 font-medium">Confirmados</p>
               <p class="text-3xl font-bold text-green-600 leading-none mt-1">
-                {{ totalConfirmados }}
+                {{ resumo?.confirmados || 0 }}
               </p>
             </div>
           </div>
@@ -224,7 +240,7 @@
             </div>
             <div>
               <p class="text-xs text-slate-400 font-medium">Cancelados</p>
-              <p class="text-3xl font-bold text-red-500 leading-none mt-1">{{ totalCancelados }}</p>
+              <p class="text-3xl font-bold text-red-500 leading-none mt-1">{{ resumo?.cancelados || 0 }}</p>
             </div>
           </div>
         </div>
@@ -233,49 +249,46 @@
       <!-- ── TABELA DE PACIENTES ─────────────────────────────────────────── -->
       <section>
         <div class="rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden">
-          <!-- Cabeçalho do card -->
-          <div
-            class="px-6 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-3"
-          >
+          <!-- Cabeçalho do card e Filtros -->
+          <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-3">
             <div>
-              <h2 class="text-sm font-semibold text-slate-800">Fila de Espera Bruta</h2>
-              <p class="text-xs text-slate-400">Todos os pacientes cadastrados no sistema</p>
+              <h2 class="text-sm font-semibold text-slate-800">Fila Cirúrgica</h2>
+              <p class="text-xs text-slate-400">Gerenciamento completo dos pacientes</p>
             </div>
-            <!-- Botão Gerar Lote -->
-            <div id="gerar-lote">
-              <button
-                (click)="gerarLote()"
-                [disabled]="isLoading"
-                class="inline-flex items-center gap-2 rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-              >
-                <!-- spinner when loading -->
-                <svg
-                  *ngIf="isLoading"
-                  class="h-4 w-4 animate-spin"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
+            
+            <!-- Barra de Filtros -->
+            <div class="flex items-center gap-2">
+              <select [(ngModel)]="filtroStatusFila" (change)="aplicarFiltros()" class="text-sm border-slate-200 rounded-md py-1.5 pl-3 pr-8 focus:ring-sky-500 focus:border-sky-500">
+                <option value="">Todos (Ativos/Inativos)</option>
+                <option value="ATIVO">Somente Ativos</option>
+                <option value="INATIVO">Somente Inativos</option>
+              </select>
+              
+              <select [(ngModel)]="filtroStatusBusca" (change)="aplicarFiltros()" class="text-sm border-slate-200 rounded-md py-1.5 pl-3 pr-8 focus:ring-sky-500 focus:border-sky-500">
+                <option value="">Todos os Status</option>
+                <option value="PENDENTE">Pendente</option>
+                <option value="MENSAGEM_ENVIADA">Mensagem Enviada</option>
+                <option value="CONFIRMADO_PACIENTE">Confirmado</option>
+                <option value="CANCELADO_PACIENTE">Cancelado</option>
+              </select>
+
+              <!-- Botão Gerar Lote -->
+              <div id="gerar-lote">
+                <button
+                  (click)="gerarLote()"
+                  [disabled]="isLoading"
+                  class="inline-flex items-center gap-2 rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
                 >
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                </svg>
-                <svg
-                  *ngIf="!isLoading"
-                  class="h-4 w-4"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="1.5"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"
-                  />
-                </svg>
-                {{ isLoading ? 'Gerando lote...' : 'Gerar Busca Ativa' }}
-              </button>
+                  <svg *ngIf="isLoading" class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                  </svg>
+                  <svg *ngIf="!isLoading" class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+                  </svg>
+                  {{ isLoading ? 'Gerando lote...' : 'Gerar Busca Ativa' }}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -284,41 +297,17 @@
             <table class="min-w-full divide-y divide-slate-100">
               <thead class="bg-slate-50">
                 <tr>
-                  <th
-                    scope="col"
-                    class="py-3 pl-6 pr-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400"
-                  >
-                    Nome do Paciente
-                  </th>
-                  <th
-                    scope="col"
-                    class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400"
-                  >
-                    CPF Mascarado
-                  </th>
-                  <th
-                    scope="col"
-                    class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400"
-                  >
-                    Procedimento Indicado
-                  </th>
-                  <th
-                    scope="col"
-                    class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400"
-                  >
-                    Data de Inserção
-                  </th>
-                  <th
-                    scope="col"
-                    class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400"
-                  >
-                    Status
-                  </th>
+                  <th scope="col" class="py-3 pl-6 pr-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">Paciente</th>
+                  <th scope="col" class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">Prontuário</th>
+                  <th scope="col" class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">Procedimento</th>
+                  <th scope="col" class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">Espera</th>
+                  <th scope="col" class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">Prioridade</th>
+                  <th scope="col" class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">Status</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100 bg-white">
                 <tr *ngIf="isLoadingPacientes">
-                  <td colspan="5" class="py-8 text-center text-sm text-slate-500">
+                  <td colspan="6" class="py-8 text-center text-sm text-slate-500">
                     <svg class="animate-spin h-5 w-5 mx-auto text-sky-500 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                       <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
@@ -327,8 +316,8 @@
                   </td>
                 </tr>
                 <tr *ngIf="!isLoadingPacientes && pacientes.length === 0">
-                  <td colspan="5" class="py-8 text-center text-sm text-slate-500">
-                    Nenhum paciente cadastrado na fila.
+                  <td colspan="6" class="py-8 text-center text-sm text-slate-500">
+                    Nenhum paciente encontrado com estes filtros.
                   </td>
                 </tr>
                 <tr
@@ -336,38 +325,50 @@
                   class="hover:bg-slate-50 transition-colors"
                   [hidden]="isLoadingPacientes"
                 >
-                  <!-- Nome -->
+                  <!-- Paciente -->
                   <td class="whitespace-nowrap py-4 pl-6 pr-3">
                     <div class="flex items-center gap-3">
-                      <!-- Avatar com inicial -->
-                      <div
-                        class="flex-shrink-0 h-8 w-8 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center text-xs font-bold"
-                      >
-                        {{ paciente.nome_completo.charAt(0) }}
+                      <div class="flex-shrink-0 h-8 w-8 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center text-xs font-bold">
+                        {{ paciente.paciente_nome.charAt(0) }}
                       </div>
-                      <p class="text-sm font-medium text-slate-800">{{ paciente.nome_completo }}</p>
+                      <div>
+                        <p class="text-sm font-medium text-slate-800 flex items-center gap-2">
+                          {{ paciente.paciente_nome }}
+                          <span *ngIf="paciente.medida_judicial" class="inline-flex items-center rounded-md bg-purple-50 px-1.5 py-0.5 text-xs font-medium text-purple-700 ring-1 ring-inset ring-purple-700/10" title="Medida Judicial">⚖️ MJ</span>
+                        </p>
+                        <p class="text-xs text-slate-400">{{ paciente.telefone }}</p>
+                      </div>
                     </div>
                   </td>
-                  <!-- CPF -->
+                  <!-- Prontuário -->
                   <td class="whitespace-nowrap px-3 py-4 text-sm font-mono text-slate-500">
-                    {{ paciente.cpf_mascarado }}
+                    {{ paciente.prontuario || '—' }}
                   </td>
-                  <!-- Procedimento -->
+                  <!-- Procedimento/Especialidade -->
                   <td class="px-3 py-4 text-sm text-slate-600 max-w-xs">
-                    {{ paciente.procedimento_indicado }}
+                    <p class="font-medium text-slate-700 truncate" [title]="paciente.procedimento">{{ paciente.procedimento || 'Não especificado' }}</p>
+                    <p class="text-xs text-slate-400 truncate">{{ paciente.especialidade || '—' }}</p>
                   </td>
-                  <!-- Data -->
+                  <!-- Espera -->
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-slate-500">
-                    {{ paciente.data_insercao_fila | date: 'dd/MM/yyyy' }}
-                  </td>
-                  <!-- Status Badge -->
-                  <td class="whitespace-nowrap px-3 py-4">
-                    <span
-                      [ngClass]="badgeClasses(paciente.status_busca_ativa)"
-                      class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset"
-                    >
-                      {{ badgeLabel(paciente.status_busca_ativa) }}
+                    <span [class.text-red-500]="paciente.tempo_espera_dias > 180" class="font-medium">
+                      {{ paciente.tempo_espera_dias }} dias
                     </span>
+                  </td>
+                  <!-- Prioridade -->
+                  <td class="whitespace-nowrap px-3 py-4 text-sm">
+                    <span *ngIf="paciente.prioridade === 'SEM'" class="text-slate-500">Normal</span>
+                    <span *ngIf="paciente.prioridade === 'ONC'" class="text-red-600 font-semibold flex items-center gap-1">Oncológico</span>
+                    <span *ngIf="paciente.prioridade === 'BRE'" class="text-orange-500 font-semibold flex items-center gap-1">Breve Retorno</span>
+                  </td>
+                  <!-- Status -->
+                  <td class="whitespace-nowrap px-3 py-4">
+                    <div class="flex flex-col gap-1 items-start">
+                      <span [ngClass]="badgeClasses(paciente.status_busca_ativa)" class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset">
+                        {{ badgeLabel(paciente.status_busca_ativa) }}
+                      </span>
+                      <span *ngIf="!paciente.ativo" class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">Inativo</span>
+                    </div>
                   </td>
                 </tr>
               </tbody>
@@ -375,12 +376,9 @@
           </div>
 
           <!-- Rodapé da tabela -->
-          <div
-            class="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-between"
-          >
+          <div class="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
             <p class="text-xs text-slate-400">
-              Exibindo
-              <span class="font-semibold text-slate-600">{{ pacientes.length }}</span> paciente(s)
+              Exibindo <span class="font-semibold text-slate-600">{{ pacientes.length }}</span> paciente(s)
             </p>
           </div>
         </div>
