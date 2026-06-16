@@ -406,7 +406,7 @@
                 <tr *ngFor="let item of loteGerado" class="hover:bg-slate-50 transition-colors">
                   <td class="whitespace-nowrap py-4 pl-6 pr-3 text-sm font-medium text-slate-800">{{ item.nome_completo }}</td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-slate-500">{{ item.telefone }}</td>
-                  <td class="whitespace-nowrap px-3 py-4 text-sm font-mono text-slate-500">{{ item.cpf || '—' }}</td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm font-mono text-slate-500">{{ item.cpf_mascarado || '—' }}</td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-slate-500">{{ item.data_nascimento || '—' }}</td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm">
                     <a

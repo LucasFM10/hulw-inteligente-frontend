@@ -134,7 +134,11 @@ export class AgendaDetail implements OnInit {
   }
 
   carregarElegiveis() {
-    this.agendaService.listarElegiveis().subscribe({
+    const filtros: any = {};
+    if (this.agenda?.especialidade_id) {
+      filtros.especialidade_id = this.agenda.especialidade_id;
+    }
+    this.agendaService.listarElegiveis(filtros).subscribe({
       next: (data) => {
         this.todasElegiveis = data;
         this.aplicarBuscaElegiveis();
@@ -266,8 +270,8 @@ export class AgendaDetail implements OnInit {
       alert('Não é possível editar itens em sessões Canceladas ou Consolidadas.');
       return;
     }
-    if (item.status === 'CANCELADA' || item.status === 'CONSOLIDADA') {
-      alert('Não é possível editar um item Cancelado ou Consolidado.');
+    if (item.status === 'CIRURGIA_CANCELADA' || item.status === 'CIRURGIA_REALIZADA') {
+      alert('Não é possível editar um item Cancelado ou Realizado.');
       return;
     }
 

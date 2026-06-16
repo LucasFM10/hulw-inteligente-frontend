@@ -182,4 +182,8 @@ export class AgendaService {
   listarProfissionais(): Observable<Profissional[]> {
     return this.http.get<Profissional[]>(`${CONFIG.API_URL}/admin/profissionais`);
   }
+
+  listarEspecialidades(): Observable<any[]> {
+    return this.http.get<any[]>(`${CONFIG.API_URL}/admin/especialidades`);
+  }
 }

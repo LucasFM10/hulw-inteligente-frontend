@@ -29,6 +29,7 @@ export class AgendaList implements OnInit {
   novoAno: number = new Date().getFullYear();
   novoMes: number = new Date().getMonth() + 1;
   novaEspecialidadeId = '';
+  especialidades: any[] = [];
 
   // Adicionado trackBy para performance
   trackById(index: number, item: any): string {
@@ -37,6 +38,22 @@ export class AgendaList implements OnInit {
 
   ngOnInit() {
     this.carregarAgendas();
+    this.carregarEspecialidades();
+  }
+
+  carregarEspecialidades() {
+    this.agendaService.listarEspecialidades().subscribe({
+      next: (data) => {
+        this.especialidades = data;
+        if (data.length > 0) {
+          this.novaEspecialidadeId = data[0].id;
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Erro ao carregar especialidades:', err);
+      }
+    });
   }
 
   carregarAgendas() {

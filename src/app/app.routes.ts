@@ -17,6 +17,11 @@ export const routes: Routes = [
     canActivate: [adminAuthGuard],
   },
   {
+    path: 'admin/fila',
+    redirectTo: '/admin',
+    pathMatch: 'full'
+  },
+  {
     path: 'admin/agenda',
     component: AgendaList,
     canActivate: [adminAuthGuard],

@@ -3,10 +3,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-
-const CONFIG = {
-  API_URL: 'http://localhost:8000'
-};
+import { CONFIG } from '../constants';
 
 @Component({
   selector: 'app-confirmar-cirurgia',
