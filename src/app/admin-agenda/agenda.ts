@@ -174,6 +174,11 @@ export class AgendaService {
     return this.http.post<{mensagem: string, link: string}>(`${CONFIG.API_URL}/admin/sessoes/${sessaoId}/itens/${itemId}/enviar-confirmacao`, {});
   }
 
+  // --- Fase 6: Desfecho ---
+  registrarDesfecho(sessaoId: string, itemId: string, payload: { realizada: boolean, motivo?: string, observacoes?: string }): Observable<ItemAgendaCirurgica> {
+    return this.http.post<ItemAgendaCirurgica>(`${CONFIG.API_URL}/admin/sessoes/${sessaoId}/itens/${itemId}/desfecho`, payload);
+  }
+
   // --- Auxiliares ---
   listarSalas(): Observable<SalaCirurgica[]> {
     return this.http.get<SalaCirurgica[]>(`${CONFIG.API_URL}/admin/salas-cirurgicas`);

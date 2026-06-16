@@ -176,6 +176,12 @@
                   <button *ngIf="agenda?.status === 'RASCUNHO' && (item.status === 'RASCUNHO_AGENDA' || item.status === 'PRE_AGENDADO') && sessao.status === 'RASCUNHO'" (click)="enviarLinkConfirmacao(sessao.id, item)" class="text-indigo-500 hover:text-indigo-700 transition-colors" title="Enviar Link de Confirmação">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                   </button>
+                  <button *ngIf="agenda?.status !== 'CANCELADA' && sessao.status !== 'CANCELADA' && item.status === 'CIRURGIA_AGENDADA'" (click)="abrirModalDesfecho(sessao.id, item, true)" class="text-green-600 hover:text-green-800 transition-colors" title="Marcar como Realizada">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                  </button>
+                  <button *ngIf="agenda?.status !== 'CANCELADA' && sessao.status !== 'CANCELADA' && item.status === 'CIRURGIA_AGENDADA'" (click)="abrirModalDesfecho(sessao.id, item, false)" class="text-red-500 hover:text-red-700 transition-colors" title="Não Realizada / Cancelar no Dia">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                  </button>
                   <button *ngIf="agenda?.status === 'RASCUNHO' && sessao.status === 'RASCUNHO'" (click)="removerItem(sessao.id, item)" class="text-slate-400 hover:text-red-600 transition-colors" title="Remover Item">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                   </button>
@@ -395,6 +401,75 @@
     
     <div class="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50 px-6 py-4 rounded-b-xl">
       <button (click)="fecharModalSubstituir()" class="px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-800 bg-white border border-slate-300 rounded-md shadow-sm hover:bg-slate-50">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Registrar Desfecho (Fase 6) -->
+<div *ngIf="modalDesfechoAberto" class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overflow-x-hidden bg-slate-900/50 backdrop-blur-sm p-4">
+  <div class="relative w-full max-w-lg rounded-xl bg-white shadow-2xl ring-1 ring-slate-200">
+    <!-- Header -->
+    <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4 bg-slate-50 rounded-t-xl">
+      <div>
+        <h3 class="text-lg font-semibold text-slate-900">
+          {{ desfechoForm.realizada ? 'Confirmar Cirurgia Realizada' : 'Registrar Cirurgia Não Realizada' }}
+        </h3>
+        <p class="text-sm text-slate-500">{{ itemDesfecho?.paciente_nome }}</p>
+      </div>
+      <button (click)="fecharModalDesfecho()" class="text-slate-400 hover:text-slate-500 rounded-lg p-1.5 hover:bg-slate-100 transition-colors">
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
+    </div>
+    
+    <!-- Body -->
+    <div class="p-6 space-y-4">
+      <div *ngIf="erroModal" class="p-3 bg-red-50 text-red-700 text-sm rounded border border-red-200">{{ erroModal }}</div>
+      
+      <!-- Se Realizada -->
+      <div *ngIf="desfechoForm.realizada" class="space-y-3">
+        <p class="text-sm text-slate-600">
+          Você está confirmando que a cirurgia do(a) paciente <span class="font-semibold text-slate-900">{{ itemDesfecho?.paciente_nome }}</span> foi realizada com sucesso.
+        </p>
+        <p class="text-xs text-slate-500 bg-amber-50 border border-amber-200 rounded p-3">
+          ⚠️ Esta ação desativará o paciente da fila cirúrgica com motivo de saída "Sucesso".
+        </p>
+      </div>
+      
+      <!-- Se Não Realizada / Cancelada -->
+      <div *ngIf="!desfechoForm.realizada" class="space-y-4">
+        <p class="text-sm text-slate-600">
+          Selecione o motivo controlado pelo qual a cirurgia do(a) paciente <span class="font-semibold text-slate-900">{{ itemDesfecho?.paciente_nome }}</span> não foi realizada:
+        </p>
+        
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Motivo *</label>
+          <select [(ngModel)]="desfechoForm.motivo" class="w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
+            <option value="">Selecione um motivo...</option>
+            <option *ngFor="let mot of motivosNaoRealizacao" [value]="mot">{{ getMotivoLabel(mot) }}</option>
+          </select>
+        </div>
+        
+        <p *ngIf="desfechoForm.motivo === 'PACIENTE_RECUSOU_NO_DIA'" class="text-xs text-red-600 bg-red-50 border border-red-100 rounded p-2">
+          Aviso: Recusa no dia inativa o paciente na fila cirúrgica definitivamente (Autoexclusão).
+        </p>
+        <p *ngIf="desfechoForm.motivo && desfechoForm.motivo !== 'PACIENTE_RECUSOU_NO_DIA'" class="text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 rounded p-2">
+          Info: Este motivo manterá o paciente ativo na fila cirúrgica para reintegração.
+        </p>
+      </div>
+      
+      <!-- Observações adicionais em ambos os casos -->
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Observações {{ desfechoForm.realizada ? '(Opcional)' : '' }}</label>
+        <textarea [(ngModel)]="desfechoForm.observacoes" placeholder="Ex: detalhes adicionais sobre o desfecho..." rows="3" class="w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm"></textarea>
+      </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50 px-6 py-4 rounded-b-xl">
+      <button (click)="fecharModalDesfecho()" class="px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-800 bg-white border border-slate-300 rounded-md shadow-sm hover:bg-slate-50">Cancelar</button>
+      <button (click)="confirmarDesfecho()" [disabled]="loadingModal || (!desfechoForm.realizada && !desfechoForm.motivo)" class="px-4 py-2 text-sm font-medium text-white border border-transparent rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 transition-colors" [ngClass]="desfechoForm.realizada ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' : 'bg-red-600 hover:bg-red-700 focus:ring-red-500'">
+        {{ loadingModal ? 'Processando...' : 'Confirmar Desfecho' }}
+      </button>
     </div>
   </div>
 </div>

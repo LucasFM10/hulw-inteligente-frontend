@@ -63,6 +63,46 @@ export class AgendaDetail implements OnInit {
   itemSubstituicao: ItemAgendaCirurgica | null = null;
   itemSubstituicaoSessaoId = '';
 
+  // Modais de Desfecho (Fase 6)
+  modalDesfechoAberto = false;
+  itemDesfecho: ItemAgendaCirurgica | null = null;
+  itemDesfechoSessaoId = '';
+  desfechoForm = {
+    realizada: true,
+    motivo: '',
+    observacoes: ''
+  };
+  motivosNaoRealizacao = [
+    'PACIENTE_FALTOU',
+    'PACIENTE_RECUSOU_NO_DIA',
+    'FALTA_LEITO',
+    'FALTA_MATERIAL',
+    'FALTA_EQUIPE',
+    'FALTA_SALA',
+    'CONDICAO_CLINICA_INADEQUADA',
+    'SUSPENSAO_MEDICA',
+    'URGENCIA_OCUPOU_SALA',
+    'PROBLEMA_ADMINISTRATIVO',
+    'OUTRO'
+  ];
+
+  getMotivoLabel(motivo: string): string {
+    const map: Record<string, string> = {
+      PACIENTE_FALTOU: 'Paciente Faltou',
+      PACIENTE_RECUSOU_NO_DIA: 'Paciente Recusou no Dia',
+      FALTA_LEITO: 'Falta de Leito',
+      FALTA_MATERIAL: 'Falta de Material',
+      FALTA_EQUIPE: 'Falta de Equipe',
+      FALTA_SALA: 'Falta de Sala',
+      CONDICAO_CLINICA_INADEQUADA: 'Condição Clínica Inadequada',
+      SUSPENSAO_MEDICA: 'Suspensão Médica',
+      URGENCIA_OCUPOU_SALA: 'Urgência Ocupou a Sala',
+      PROBLEMA_ADMINISTRATIVO: 'Problema Administrativo',
+      OUTRO: 'Outro'
+    };
+    return map[motivo] || motivo;
+  }
+
   // Adicionado trackBy para performance
   trackById(index: number, item: any): string {
     return item.id;
@@ -536,6 +576,74 @@ export class AgendaDetail implements OnInit {
     this.router.navigate(['/admin/agenda']);
   }
 
+  abrirModalDesfecho(sessaoId: string, item: ItemAgendaCirurgica, realizada: boolean) {
+    const sessao = this.agenda?.sessoes?.find(s => s.id === sessaoId);
+    if (sessao?.status === 'CANCELADA') {
+      alert('Não é possível registrar desfecho em sessões Canceladas.');
+      return;
+    }
+    if (this.agenda?.status === 'CANCELADA') {
+      alert('Não é possível registrar desfecho em agendas Canceladas.');
+      return;
+    }
+    this.itemDesfecho = item;
+    this.itemDesfechoSessaoId = sessaoId;
+    this.desfechoForm = {
+      realizada: realizada,
+      motivo: '',
+      observacoes: ''
+    };
+    this.erroModal = '';
+    this.modalDesfechoAberto = true;
+  }
+
+  fecharModalDesfecho() {
+    this.modalDesfechoAberto = false;
+    this.itemDesfecho = null;
+    this.erroModal = '';
+  }
+
+  confirmarDesfecho() {
+    if (!this.itemDesfecho || !this.itemDesfechoSessaoId) return;
+    if (!this.desfechoForm.realizada && !this.desfechoForm.motivo) {
+      alert('Por favor, selecione um motivo para a não realização.');
+      return;
+    }
+    
+    this.loadingModal = true;
+    this.agendaService.registrarDesfecho(
+      this.itemDesfechoSessaoId,
+      this.itemDesfecho.id,
+      {
+        realizada: this.desfechoForm.realizada,
+        motivo: this.desfechoForm.realizada ? undefined : this.desfechoForm.motivo,
+        observacoes: this.desfechoForm.observacoes || undefined
+      }
+    ).subscribe({
+      next: (itemAtualizado) => {
+        const sessao = this.agenda?.sessoes?.find(s => s.id === this.itemDesfechoSessaoId);
+        if (sessao && sessao.itens) {
+          const index = sessao.itens.findIndex(i => i.id === itemAtualizado.id);
+          if (index !== -1) {
+            sessao.itens[index] = itemAtualizado;
+          }
+        }
+        
+        this.carregarElegiveis();
+        this.fecharModalDesfecho();
+        this.sucesso = 'Desfecho cirúrgico registrado com sucesso!';
+        setTimeout(() => { this.sucesso = ''; this.cdr.detectChanges(); }, 3000);
+        this.loadingModal = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.erroModal = err.error?.detail || 'Erro ao registrar desfecho.';
+        this.loadingModal = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   getBadgeClass(status: string): string {
     if (!status) return '';
     switch(status) {
@@ -544,6 +652,10 @@ export class AgendaDetail implements OnInit {
       case 'CANCELADA': return 'bg-red-100 text-red-800 ring-red-600/20';
       case 'RASCUNHO_AGENDA': return 'bg-slate-100 text-slate-800 ring-slate-600/20';
       case 'PRE_AGENDADO': return 'bg-blue-100 text-blue-800 ring-blue-600/20';
+      case 'AGUARDANDO_CONFIRMACAO': return 'bg-indigo-100 text-indigo-800 ring-indigo-600/20';
+      case 'CIRURGIA_AGENDADA': return 'bg-emerald-100 text-emerald-800 ring-emerald-600/20';
+      case 'CIRURGIA_REALIZADA': return 'bg-green-100 text-green-800 ring-green-600/20';
+      case 'CIRURGIA_CANCELADA': return 'bg-red-100 text-red-800 ring-red-600/20';
       default: return 'bg-gray-100 text-gray-800 ring-gray-600/20';
     }
   }
