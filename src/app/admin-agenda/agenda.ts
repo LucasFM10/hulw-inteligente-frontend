@@ -11,11 +11,29 @@ export interface SalaCirurgica {
   ativa: boolean;
 }
 
+export interface Profissional {
+  id: string;
+  matricula?: string;
+  nome: string;
+  especialidade_id?: string;
+}
+
 export interface AgendaCirurgica {
   id: string;
+  ano: number;
+  mes: number;
+  especialidade_id?: string;
+  especialidade_nome?: string;
+  status: string;
+  observacoes?: string;
+  sessoes?: SessaoCirurgica[];
+}
+
+export interface SessaoCirurgica {
+  id: string;
+  agenda_id: string;
   data: string;
   turno: string;
-  especialidade_id?: string;
   sala_id?: string;
   responsavel_id?: string;
   status: string;
@@ -26,7 +44,7 @@ export interface AgendaCirurgica {
 
 export interface ItemAgendaCirurgica {
   id: string;
-  agenda_id: string;
+  sessao_id: string;
   entrada_fila_id: string;
   horario_inicio?: string;
   horario_fim?: string;
@@ -38,6 +56,10 @@ export interface ItemAgendaCirurgica {
   observacoes?: string;
   paciente_nome?: string;
   procedimento?: string;
+  medico_nome?: string;
+  sala_nome?: string;
+  prioridade?: string;
+  medida_judicial?: boolean;
 }
 
 export interface EntradaFilaElegivel {
@@ -93,27 +115,71 @@ export class AgendaService {
     return this.http.patch<AgendaCirurgica>(`${this.apiUrl}/${id}/cancelar`, payload);
   }
 
-  // --- Itens da Agenda ---
-  adicionarItem(agendaId: string, payload: Partial<ItemAgendaCirurgica>): Observable<ItemAgendaCirurgica> {
-    return this.http.post<ItemAgendaCirurgica>(`${this.apiUrl}/${agendaId}/itens`, payload);
+  // --- Endpoints Básicos Sessões ---
+  criarSessao(agendaId: string, payload: Partial<SessaoCirurgica>): Observable<SessaoCirurgica> {
+    return this.http.post<SessaoCirurgica>(`${this.apiUrl}/${agendaId}/sessoes`, payload);
   }
 
-  atualizarItem(agendaId: string, itemId: string, payload: Partial<ItemAgendaCirurgica>): Observable<ItemAgendaCirurgica> {
-    return this.http.patch<ItemAgendaCirurgica>(`${this.apiUrl}/${agendaId}/itens/${itemId}`, payload);
+  atualizarSessao(sessaoId: string, payload: Partial<SessaoCirurgica>): Observable<SessaoCirurgica> {
+    return this.http.patch<SessaoCirurgica>(`${CONFIG.API_URL}/admin/sessoes/${sessaoId}`, payload);
   }
 
-  removerItem(agendaId: string, itemId: string): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/${agendaId}/itens/${itemId}`);
+  removerSessao(sessaoId: string): Observable<any> {
+    return this.http.delete(`${CONFIG.API_URL}/admin/sessoes/${sessaoId}`);
+  }
+
+  consolidarSessao(sessaoId: string): Observable<SessaoCirurgica> {
+    return this.http.patch<SessaoCirurgica>(`${CONFIG.API_URL}/admin/sessoes/${sessaoId}/consolidar`, {});
+  }
+
+  cancelarSessao(sessaoId: string, payload: { observacoes?: string }): Observable<SessaoCirurgica> {
+    return this.http.patch<SessaoCirurgica>(`${CONFIG.API_URL}/admin/sessoes/${sessaoId}/cancelar`, payload);
+  }
+
+  // --- Itens da Sessão ---
+  adicionarItem(sessaoId: string, payload: Partial<ItemAgendaCirurgica>): Observable<ItemAgendaCirurgica> {
+    return this.http.post<ItemAgendaCirurgica>(`${CONFIG.API_URL}/admin/sessoes/${sessaoId}/itens`, payload);
+  }
+
+  atualizarItem(sessaoId: string, itemId: string, payload: Partial<ItemAgendaCirurgica>): Observable<ItemAgendaCirurgica> {
+    return this.http.patch<ItemAgendaCirurgica>(`${CONFIG.API_URL}/admin/sessoes/${sessaoId}/itens/${itemId}`, payload);
+  }
+
+  removerItem(sessaoId: string, itemId: string): Observable<any> {
+    return this.http.delete(`${CONFIG.API_URL}/admin/sessoes/${sessaoId}/itens/${itemId}`);
   }
 
   // --- Elegibilidade ---
   listarElegiveis(filtros?: any): Observable<EntradaFilaElegivel[]> {
     let params = new HttpParams();
     if (filtros) {
-      Object.keys(filtros).forEach(key => {
-        if (filtros[key]) params = params.set(key, filtros[key]);
-      });
+      if (filtros.especialidade_id) params = params.set('especialidade_id', filtros.especialidade_id);
     }
     return this.http.get<EntradaFilaElegivel[]>(`${CONFIG.API_URL}/admin/agenda/elegiveis`, { params });
+  }
+
+  // --- Fase 4: Substitutos ---
+  listarSubstitutos(sessaoId: string, itemId: string): Observable<EntradaFilaElegivel[]> {
+    return this.http.get<EntradaFilaElegivel[]>(`${CONFIG.API_URL}/admin/sessoes/${sessaoId}/itens/${itemId}/substitutos`);
+  }
+
+  substituirItem(sessaoId: string, itemId: string, novaEntradaFilaId: string): Observable<ItemAgendaCirurgica> {
+    return this.http.post<ItemAgendaCirurgica>(`${CONFIG.API_URL}/admin/sessoes/${sessaoId}/itens/${itemId}/substituir`, {
+      nova_entrada_fila_id: novaEntradaFilaId
+    });
+  }
+
+  // --- Fase 5: Confirmação ---
+  enviarLinkConfirmacao(sessaoId: string, itemId: string): Observable<{mensagem: string, link: string}> {
+    return this.http.post<{mensagem: string, link: string}>(`${CONFIG.API_URL}/admin/sessoes/${sessaoId}/itens/${itemId}/enviar-confirmacao`, {});
+  }
+
+  // --- Auxiliares ---
+  listarSalas(): Observable<SalaCirurgica[]> {
+    return this.http.get<SalaCirurgica[]>(`${CONFIG.API_URL}/admin/salas-cirurgicas`);
+  }
+
+  listarProfissionais(): Observable<Profissional[]> {
+    return this.http.get<Profissional[]>(`${CONFIG.API_URL}/admin/profissionais`);
   }
 }

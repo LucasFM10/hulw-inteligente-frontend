@@ -28,7 +28,8 @@
     </button>
     <div class="sm:flex sm:items-center sm:justify-between">
       <div class="sm:flex-auto flex items-center gap-3">
-        <h1 class="text-2xl font-bold text-slate-900">Agenda: {{ agenda?.data | date:'dd/MM/yyyy' }}</h1>
+        <h1 class="text-2xl font-bold text-slate-900">Agenda: {{ agenda?.mes }}/{{ agenda?.ano }}</h1>
+        <span class="text-sm text-slate-500 font-mono">Esp: {{ agenda?.especialidade_nome || 'Sem Especialidade' }}</span>
         <span class="inline-flex items-center rounded-md px-2.5 py-1 text-sm font-medium ring-1 ring-inset" [ngClass]="getBadgeClass(agenda?.status || '')">
           {{ agenda?.status }}
         </span>
@@ -71,7 +72,7 @@
         <div *ngIf="!loading && elegiveis.length === 0" class="p-8 text-center text-slate-500">Nenhum paciente elegível encontrado.</div>
         
         <ul class="divide-y divide-slate-100">
-          <li *ngFor="let paciente of elegiveis" class="p-4 hover:bg-slate-50 transition-colors flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center">
+          <li *ngFor="let paciente of elegiveis; trackBy: trackById" class="p-4 hover:bg-slate-50 transition-colors flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center">
             <div>
               <div class="flex items-center gap-2 mb-1">
                 <span class="font-semibold text-slate-900">{{ paciente.paciente_nome }}</span>
@@ -87,7 +88,7 @@
               </div>
             </div>
             
-            <button (click)="adicionarItem(paciente)" [disabled]="agenda?.status !== 'RASCUNHO' || loading" class="shrink-0 bg-white hover:bg-slate-50 text-sky-600 font-medium py-1.5 px-3 rounded-md border border-slate-200 text-sm shadow-sm transition-colors disabled:opacity-50">
+            <button (click)="abrirModalAdicionar(paciente)" [disabled]="agenda?.status !== 'RASCUNHO' || loading" class="shrink-0 bg-white hover:bg-slate-50 text-sky-600 font-medium py-1.5 px-3 rounded-md border border-slate-200 text-sm shadow-sm transition-colors disabled:opacity-50">
               Adicionar &rarr;
             </button>
           </li>
@@ -95,49 +96,306 @@
       </div>
     </div>
 
-    <!-- LADO DIREITO: Itens da Agenda -->
+    <!-- LADO DIREITO: Sessões da Agenda -->
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[600px]">
-      <div class="p-5 border-b border-slate-100 bg-slate-50/50">
-        <h2 class="text-lg font-semibold text-slate-800">Cirurgias Agendadas</h2>
-        <p class="text-sm text-slate-500">
-          Turno: <span class="font-medium text-slate-700">{{ agenda?.turno }}</span> |
-          Sala: <span class="font-medium text-slate-700">{{ agenda?.sala_nome || 'Não definida' }}</span>
-        </p>
-      </div>
-      
-      <div class="overflow-y-auto flex-1 p-0">
-        <div *ngIf="loading && !agenda?.itens?.length" class="p-8 text-center text-slate-500">Carregando itens...</div>
-        <div *ngIf="!loading && !agenda?.itens?.length" class="p-8 text-center text-slate-500 flex flex-col items-center justify-center h-full">
-          <svg class="w-12 h-12 text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-          <p>Nenhum paciente alocado nesta agenda.</p>
-          <p class="text-xs mt-1">Adicione pacientes usando a lista ao lado.</p>
+      <div class="p-5 border-b border-slate-100 bg-slate-50/50 flex flex-col gap-3">
+        <div class="flex justify-between items-center">
+          <h2 class="text-lg font-semibold text-slate-800">Sessões</h2>
+          <div class="text-sm">
+            <select [(ngModel)]="sessaoSelecionadaId" class="border-slate-200 rounded-md py-1 px-2 text-xs">
+              <option value="">Selecione uma sessão...</option>
+              <option *ngFor="let s of agenda?.sessoes; trackBy: trackById" [value]="s.id">{{ s.data | date:'dd/MM/yyyy' }} - {{ s.turno }}</option>
+            </select>
+          </div>
         </div>
         
-        <ul class="divide-y divide-slate-100">
-          <li *ngFor="let item of agenda?.itens" class="p-4 hover:bg-slate-50 transition-colors group">
-            <div class="flex justify-between items-start mb-2">
-              <span class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset" [ngClass]="getBadgeClass(item.status)">
-                {{ item.status }}
+        <!-- Form Nova Sessao -->
+        <div class="bg-white p-3 rounded border border-slate-200 flex flex-wrap gap-2 items-end" *ngIf="agenda?.status === 'RASCUNHO'">
+          <div>
+            <label class="block text-xs text-slate-500 mb-1">Data</label>
+            <input type="date" [(ngModel)]="novaSessaoData" class="text-xs border-slate-200 rounded py-1 px-2">
+          </div>
+          <div>
+            <label class="block text-xs text-slate-500 mb-1">Turno</label>
+            <select [(ngModel)]="novaSessaoTurno" class="text-xs border-slate-200 rounded py-1 px-2">
+              <option value="MANHA">Manhã</option>
+              <option value="TARDE">Tarde</option>
+              <option value="NOITE">Noite</option>
+              <option value="INTEGRAL">Integral</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-slate-500 mb-1">Sala (ID)</label>
+            <input type="text" [(ngModel)]="novaSessaoSala" placeholder="Opcional" class="text-xs border-slate-200 rounded py-1 px-2 w-24">
+          </div>
+          <button (click)="criarSessao()" [disabled]="loading" class="bg-slate-800 hover:bg-slate-900 text-white text-xs py-1 px-3 rounded h-[26px]">Nova</button>
+        </div>
+      </div>
+      
+      <div class="overflow-y-auto flex-1 p-4 space-y-4 bg-slate-50">
+        <div *ngIf="loading && !agenda?.sessoes?.length" class="text-center text-slate-500 text-sm">Carregando sessões...</div>
+        <div *ngIf="!loading && !agenda?.sessoes?.length" class="text-center text-slate-500 text-sm py-8">Nenhuma sessão criada.</div>
+        
+        <div *ngFor="let sessao of agenda?.sessoes; trackBy: trackById" class="bg-white border border-slate-200 rounded-lg shadow-sm" [class.ring-2]="sessao.id === sessaoSelecionadaId" [class.ring-sky-500]="sessao.id === sessaoSelecionadaId">
+          <!-- Header Sessao -->
+          <div class="p-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center cursor-pointer" (click)="sessaoSelecionadaId = sessao.id">
+            <div>
+              <span class="font-medium text-slate-800">{{ sessao.data | date:'dd/MM/yyyy' }}</span>
+              <span class="text-slate-500 text-xs ml-2">{{ sessao.turno }}</span>
+              <span class="text-slate-400 text-xs ml-2">Sala: {{ sessao.sala_nome || sessao.sala_id || 'Não definida' }}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset" [ngClass]="getBadgeClass(sessao.status)">
+                {{ sessao.status }}
               </span>
-              <button *ngIf="agenda?.status === 'RASCUNHO'" (click)="removerItem(item.id)" [disabled]="loading" class="text-slate-400 hover:text-red-600 transition-colors disabled:opacity-50" title="Remover da agenda">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-              </button>
+              <button *ngIf="sessao.status === 'RASCUNHO'" (click)="consolidarSessao(sessao.id); $event.stopPropagation()" class="text-xs bg-green-100 text-green-700 hover:bg-green-200 px-2 py-1 rounded transition-colors shadow-sm font-medium">Consolidar</button>
+              <button *ngIf="sessao.status === 'RASCUNHO'" (click)="cancelarSessao(sessao.id); $event.stopPropagation()" class="text-xs bg-red-100 text-red-700 hover:bg-red-200 px-2 py-1 rounded transition-colors shadow-sm font-medium">Cancelar</button>
             </div>
-            
-            <div class="font-medium text-slate-900 mb-1">{{ item.paciente_nome }}</div>
-            <div class="text-sm text-slate-600 mb-2">{{ item.procedimento || 'Procedimento não informado' }}</div>
-            
-            <div class="flex gap-3 text-xs text-slate-500">
-              <div class="flex items-center gap-1">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                {{ item.horario_inicio || '--:--' }} - {{ item.horario_fim || '--:--' }}
+          </div>
+          
+          <!-- Itens da Sessao -->
+          <ul class="divide-y divide-slate-50">
+            <li *ngIf="!sessao.itens?.length" class="p-3 text-xs text-center text-slate-400">Nenhum paciente nesta sessão.</li>
+            <li *ngFor="let item of sessao.itens; trackBy: trackById" class="p-4 hover:bg-slate-50 transition-colors group">
+              <div class="flex justify-between items-start mb-2">
+                <div class="flex items-center gap-2">
+                  <span class="font-semibold text-sm text-slate-900">{{ item.paciente_nome }}</span>
+                  <span *ngIf="item.medida_judicial" class="inline-flex items-center rounded-md bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700 ring-1 ring-inset ring-purple-600/20">⚖️ MJ</span>
+                  <span *ngIf="item.prioridade === 'ONC'" class="inline-flex items-center rounded-md bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/20">Oncológico</span>
+                  <span *ngIf="item.prioridade === 'BRE'" class="inline-flex items-center rounded-md bg-orange-50 px-2 py-0.5 text-xs font-medium text-orange-700 ring-1 ring-inset ring-orange-600/20">Breve Retorno</span>
+                  <span *ngIf="item.ordem !== null && item.ordem !== undefined" class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 ring-1 ring-inset ring-slate-500/20">Ordem: {{ item.ordem }}</span>
+                </div>
+                
+                <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button *ngIf="agenda?.status === 'RASCUNHO' && item.status !== 'CANCELADA' && item.status !== 'CONSOLIDADA' && sessao.status === 'RASCUNHO'" (click)="abrirModalEditar(sessao.id, item)" class="text-sky-600 hover:text-sky-800 transition-colors" title="Editar Item">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                  </button>
+                  <button *ngIf="agenda?.status === 'RASCUNHO' && item.status !== 'CANCELADA' && item.status !== 'CONSOLIDADA' && sessao.status === 'RASCUNHO'" (click)="abrirModalSubstituir(sessao.id, item)" class="text-orange-500 hover:text-orange-700 transition-colors" title="Substituir Paciente">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                  </button>
+                  <button *ngIf="agenda?.status === 'RASCUNHO' && (item.status === 'RASCUNHO_AGENDA' || item.status === 'PRE_AGENDADO') && sessao.status === 'RASCUNHO'" (click)="enviarLinkConfirmacao(sessao.id, item)" class="text-indigo-500 hover:text-indigo-700 transition-colors" title="Enviar Link de Confirmação">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                  </button>
+                  <button *ngIf="agenda?.status === 'RASCUNHO' && sessao.status === 'RASCUNHO'" (click)="removerItem(sessao.id, item)" class="text-slate-400 hover:text-red-600 transition-colors" title="Remover Item">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                  </button>
+                </div>
               </div>
-            </div>
-          </li>
-        </ul>
+              
+              <div class="text-sm text-slate-700 mb-2">{{ item.procedimento || 'Procedimento não informado' }}</div>
+              
+              <div class="grid grid-cols-2 gap-2 text-xs text-slate-500 mb-2">
+                <div class="flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  <span>{{ item.horario_inicio ? item.horario_inicio + (item.horario_fim ? ' às ' + item.horario_fim : '') : 'Horário não definido' }}</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                  <span class="truncate">{{ item.medico_nome || 'Sem profissional alocado' }}</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                  <span class="truncate">{{ item.sala_nome || sessao.sala_nome || sessao.sala_id || 'Sala não definida' }}</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <span class="inline-flex items-center rounded px-1.5 py-0.5 font-medium" [ngClass]="getBadgeClass(item.status)">{{ item.status }}</span>
+                </div>
+              </div>
+              
+              <div *ngIf="item.observacoes" class="mt-2 text-xs text-slate-500 bg-slate-100 p-2 rounded italic">
+                {{ item.observacoes }}
+              </div>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- Modal Adicionar Item -->
+<div *ngIf="modalAdicionarAberto" class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overflow-x-hidden bg-slate-900/50 backdrop-blur-sm p-4">
+  <div class="relative w-full max-w-lg rounded-xl bg-white shadow-2xl ring-1 ring-slate-200">
+    <!-- Header -->
+    <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4 bg-slate-50 rounded-t-xl">
+      <div>
+        <h3 class="text-lg font-semibold text-slate-900">Adicionar Paciente à Sessão</h3>
+        <p class="text-sm text-slate-500">{{ pacienteAdicionando?.paciente_nome }}</p>
+      </div>
+      <button (click)="fecharModalAdicionar()" class="text-slate-400 hover:text-slate-500 rounded-lg p-1.5 hover:bg-slate-100 transition-colors">
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
+    </div>
+    
+    <!-- Body -->
+    <div class="p-6 space-y-4">
+      <div *ngIf="erroModal" class="p-3 bg-red-50 text-red-700 text-sm rounded border border-red-200">{{ erroModal }}</div>
+      
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Horário Início</label>
+          <input type="time" [(ngModel)]="formItem.horario_inicio" class="w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Horário Fim</label>
+          <input type="time" [(ngModel)]="formItem.horario_fim" class="w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
+        </div>
+      </div>
+      
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Sala</label>
+          <select [(ngModel)]="formItem.sala_id" class="w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
+            <option value="">(Usar Sala da Sessão)</option>
+            <option *ngFor="let sala of salas" [value]="sala.id">{{ sala.nome }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Ordem (Fila)</label>
+          <input type="number" [(ngModel)]="formItem.ordem" placeholder="Ex: 1" class="w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
+        </div>
+      </div>
+      
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Profissional (Cirurgião)</label>
+        <select [(ngModel)]="formItem.medico_id" class="w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
+          <option value="">Selecione...</option>
+          <option *ngFor="let prof of profissionais" [value]="prof.id">{{ prof.nome }}</option>
+        </select>
+      </div>
+      
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Observações</label>
+        <textarea [(ngModel)]="formItem.observacoes" rows="2" class="w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm"></textarea>
+      </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50 px-6 py-4 rounded-b-xl">
+      <button (click)="fecharModalAdicionar()" class="px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-800 bg-white border border-slate-300 rounded-md shadow-sm hover:bg-slate-50">Cancelar</button>
+      <button (click)="confirmarAdicionarItem()" [disabled]="loadingModal" class="px-4 py-2 text-sm font-medium text-white bg-sky-600 border border-transparent rounded-md shadow-sm hover:bg-sky-700 disabled:opacity-50">
+        {{ loadingModal ? 'Salvando...' : 'Confirmar Adição' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar Item -->
+<div *ngIf="modalEditarAberto" class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overflow-x-hidden bg-slate-900/50 backdrop-blur-sm p-4">
+  <div class="relative w-full max-w-lg rounded-xl bg-white shadow-2xl ring-1 ring-slate-200">
+    <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4 bg-slate-50 rounded-t-xl">
+      <div>
+        <h3 class="text-lg font-semibold text-slate-900">Editar Detalhes do Paciente</h3>
+        <p class="text-sm text-slate-500">{{ itemEmEdicao?.paciente_nome }}</p>
+      </div>
+      <button (click)="fecharModalEditar()" class="text-slate-400 hover:text-slate-500 rounded-lg p-1.5 hover:bg-slate-100 transition-colors">
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
+    </div>
+    
+    <div class="p-6 space-y-4">
+      <div *ngIf="erroModal" class="p-3 bg-red-50 text-red-700 text-sm rounded border border-red-200">{{ erroModal }}</div>
+      
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Horário Início</label>
+          <input type="time" [(ngModel)]="formItem.horario_inicio" class="w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Horário Fim</label>
+          <input type="time" [(ngModel)]="formItem.horario_fim" class="w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
+        </div>
+      </div>
+      
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Sala</label>
+          <select [(ngModel)]="formItem.sala_id" class="w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
+            <option value="">(Usar Sala da Sessão)</option>
+            <option *ngFor="let sala of salas" [value]="sala.id">{{ sala.nome }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Ordem (Fila)</label>
+          <input type="number" [(ngModel)]="formItem.ordem" placeholder="Ex: 1" class="w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
+        </div>
+      </div>
+      
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Profissional (Cirurgião)</label>
+        <select [(ngModel)]="formItem.medico_id" class="w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
+          <option value="">Selecione...</option>
+          <option *ngFor="let prof of profissionais" [value]="prof.id">{{ prof.nome }}</option>
+        </select>
+      </div>
+      
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Observações</label>
+        <textarea [(ngModel)]="formItem.observacoes" rows="2" class="w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm"></textarea>
+      </div>
+    </div>
+    
+    <div class="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50 px-6 py-4 rounded-b-xl">
+      <button (click)="fecharModalEditar()" class="px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-800 bg-white border border-slate-300 rounded-md shadow-sm hover:bg-slate-50">Cancelar</button>
+      <button (click)="confirmarEditarItem()" [disabled]="loadingModal" class="px-4 py-2 text-sm font-medium text-white bg-sky-600 border border-transparent rounded-md shadow-sm hover:bg-sky-700 disabled:opacity-50">
+        {{ loadingModal ? 'Salvando...' : 'Salvar Alterações' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Substituir Paciente -->
+<div *ngIf="modalSubstitutosAberto" class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overflow-x-hidden bg-slate-900/50 backdrop-blur-sm p-4">
+  <div class="relative w-full max-w-3xl rounded-xl bg-white shadow-2xl ring-1 ring-slate-200">
+    <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4 bg-slate-50 rounded-t-xl">
+      <div>
+        <h3 class="text-lg font-semibold text-slate-900">Substituir Paciente</h3>
+        <p class="text-sm text-slate-500">Substituindo: <span class="font-semibold">{{ itemSubstituicao?.paciente_nome }}</span></p>
+      </div>
+      <button (click)="fecharModalSubstituir()" class="text-slate-400 hover:text-slate-500 rounded-lg p-1.5 hover:bg-slate-100 transition-colors">
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
+    </div>
+    
+    <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+      <div *ngIf="erroModal" class="p-3 bg-red-50 text-red-700 text-sm rounded border border-red-200">{{ erroModal }}</div>
+      
+      <div *ngIf="loadingModal" class="text-center py-8 text-slate-500">
+        Buscando os melhores substitutos...
+      </div>
+      
+      <div *ngIf="!loadingModal && substitutos.length === 0" class="text-center py-8 text-slate-500">
+        Nenhum paciente elegível para substituir no momento.
+      </div>
+
+      <div *ngIf="!loadingModal && substitutos.length > 0" class="space-y-3">
+        <p class="text-sm text-slate-600 mb-2">Sugestões baseadas em especialidade, tempo de espera e prioridades:</p>
+        <div *ngFor="let sub of substitutos" class="border border-slate-200 rounded-lg p-4 flex justify-between items-center hover:border-sky-300 transition-colors bg-white shadow-sm">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="font-semibold text-slate-900">{{ sub.paciente_nome }}</span>
+              <span *ngIf="sub.medida_judicial" class="inline-flex items-center rounded-md bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700 ring-1 ring-inset ring-purple-600/20">⚖️ MJ</span>
+              <span *ngIf="sub.prioridade === 'ONC'" class="inline-flex items-center rounded-md bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/20">Oncológico</span>
+              <span *ngIf="sub.prioridade === 'BRE'" class="inline-flex items-center rounded-md bg-orange-50 px-2 py-0.5 text-xs font-medium text-orange-700 ring-1 ring-inset ring-orange-600/20">Breve Retorno</span>
+            </div>
+            <div class="text-sm text-slate-600 mb-1">
+              {{ sub.procedimento || 'Procedimento não informado' }} <span class="text-slate-400">({{ sub.especialidade || 'Sem Esp.' }})</span>
+            </div>
+            <div class="text-xs text-slate-500">
+              Espera: <span [class.text-red-600]="sub.tempo_espera_dias > 180" [class.font-semibold]="sub.tempo_espera_dias > 180">{{ sub.tempo_espera_dias }} dias</span>
+            </div>
+          </div>
+          <button (click)="confirmarSubstituicao(sub)" class="shrink-0 bg-white hover:bg-slate-50 text-sky-600 font-medium py-1.5 px-3 rounded-md border border-sky-200 hover:border-sky-300 text-sm shadow-sm transition-colors">
+            Usar este substituto
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50 px-6 py-4 rounded-b-xl">
+      <button (click)="fecharModalSubstituir()" class="px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-800 bg-white border border-slate-300 rounded-md shadow-sm hover:bg-slate-50">Cancelar</button>
+    </div>
   </div>
 </div>
     </div>

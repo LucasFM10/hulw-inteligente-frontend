@@ -29,6 +29,12 @@ export const routes: Routes = [
 
   // Portal do paciente (link mágico via token JWT)
   { path: 'atualizar', component: PatientPortalComponent },
+  
+  // Fase 5: Confirmação de Cirurgia do Paciente
+  { 
+    path: 'confirmar-cirurgia', 
+    loadComponent: () => import('./confirmar-cirurgia/confirmar-cirurgia.component').then(m => m.ConfirmarCirurgiaComponent) 
+  },
 
   // Rota padrão → redireciona para o painel (o guard lida com não autenticados)
   { path: '', redirectTo: '/admin', pathMatch: 'full' },

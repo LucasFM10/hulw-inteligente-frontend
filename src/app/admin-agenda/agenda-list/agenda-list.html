@@ -33,17 +33,29 @@
     <h2 class="text-lg font-semibold text-slate-800 mb-4">Nova Agenda</h2>
     <div class="flex flex-wrap gap-4 items-end">
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1">Data</label>
-        <input type="date" [(ngModel)]="novaData" class="text-sm border-slate-200 rounded-md py-1.5 px-3 focus:ring-sky-500 focus:border-sky-500">
+        <label class="block text-sm font-medium text-slate-700 mb-1">Ano</label>
+        <input type="number" [(ngModel)]="novoAno" class="text-sm border-slate-200 rounded-md py-1.5 px-3 focus:ring-sky-500 focus:border-sky-500 w-24">
       </div>
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1">Turno</label>
-        <select [(ngModel)]="novoTurno" class="text-sm border-slate-200 rounded-md py-1.5 px-3 focus:ring-sky-500 focus:border-sky-500">
-          <option value="MANHA">Manhã</option>
-          <option value="TARDE">Tarde</option>
-          <option value="NOITE">Noite</option>
-          <option value="INTEGRAL">Integral</option>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Mês</label>
+        <select [(ngModel)]="novoMes" class="text-sm border-slate-200 rounded-md py-1.5 px-3 focus:ring-sky-500 focus:border-sky-500">
+          <option [ngValue]="1">Janeiro</option>
+          <option [ngValue]="2">Fevereiro</option>
+          <option [ngValue]="3">Março</option>
+          <option [ngValue]="4">Abril</option>
+          <option [ngValue]="5">Maio</option>
+          <option [ngValue]="6">Junho</option>
+          <option [ngValue]="7">Julho</option>
+          <option [ngValue]="8">Agosto</option>
+          <option [ngValue]="9">Setembro</option>
+          <option [ngValue]="10">Outubro</option>
+          <option [ngValue]="11">Novembro</option>
+          <option [ngValue]="12">Dezembro</option>
         </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Especialidade (ID)</label>
+        <input type="text" [(ngModel)]="novaEspecialidadeId" placeholder="UUID" class="text-sm border-slate-200 rounded-md py-1.5 px-3 focus:ring-sky-500 focus:border-sky-500 w-64">
       </div>
       <button (click)="criarAgenda()" [disabled]="loading" class="bg-sky-600 hover:bg-sky-700 text-white font-medium py-1.5 px-4 rounded-md text-sm transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
         Criar Agenda
@@ -54,19 +66,27 @@
   <!-- Filters -->
   <div class="bg-white rounded-xl shadow-sm border border-slate-200 mb-8">
     <div class="p-5 border-b border-slate-100 bg-slate-50/50 rounded-t-xl flex flex-wrap gap-4">
-      <input type="date" [(ngModel)]="filtroData" (change)="aplicarFiltros()" class="text-sm border-slate-200 rounded-md py-1.5 px-3">
+      <input type="number" placeholder="Ano" [(ngModel)]="filtroAno" (change)="aplicarFiltros()" class="text-sm border-slate-200 rounded-md py-1.5 px-3 w-24">
+      <select [(ngModel)]="filtroMes" (change)="aplicarFiltros()" class="text-sm border-slate-200 rounded-md py-1.5 px-3">
+        <option [ngValue]="null">Todos os Meses</option>
+        <option [ngValue]="1">Janeiro</option>
+        <option [ngValue]="2">Fevereiro</option>
+        <option [ngValue]="3">Março</option>
+        <option [ngValue]="4">Abril</option>
+        <option [ngValue]="5">Maio</option>
+        <option [ngValue]="6">Junho</option>
+        <option [ngValue]="7">Julho</option>
+        <option [ngValue]="8">Agosto</option>
+        <option [ngValue]="9">Setembro</option>
+        <option [ngValue]="10">Outubro</option>
+        <option [ngValue]="11">Novembro</option>
+        <option [ngValue]="12">Dezembro</option>
+      </select>
       <select [(ngModel)]="filtroStatus" (change)="aplicarFiltros()" class="text-sm border-slate-200 rounded-md py-1.5 px-3">
         <option value="">Todos os Status</option>
         <option value="RASCUNHO">Rascunho</option>
         <option value="CONSOLIDADA">Consolidada</option>
         <option value="CANCELADA">Cancelada</option>
-      </select>
-      <select [(ngModel)]="filtroTurno" (change)="aplicarFiltros()" class="text-sm border-slate-200 rounded-md py-1.5 px-3">
-        <option value="">Todos os Turnos</option>
-        <option value="MANHA">Manhã</option>
-        <option value="TARDE">Tarde</option>
-        <option value="NOITE">Noite</option>
-        <option value="INTEGRAL">Integral</option>
       </select>
     </div>
 
@@ -81,9 +101,9 @@
       <table class="w-full text-left border-collapse">
         <thead>
           <tr class="border-b border-slate-200 text-sm text-slate-500 font-medium bg-white">
-            <th class="px-5 py-4 whitespace-nowrap">Data</th>
-            <th class="px-5 py-4 whitespace-nowrap">Turno</th>
-            <th class="px-5 py-4 whitespace-nowrap">Sala</th>
+            <th class="px-5 py-4 whitespace-nowrap">Ano</th>
+            <th class="px-5 py-4 whitespace-nowrap">Mês</th>
+            <th class="px-5 py-4 whitespace-nowrap">Especialidade (ID)</th>
             <th class="px-5 py-4 whitespace-nowrap">Status</th>
             <th class="px-5 py-4 whitespace-nowrap text-right">Ações</th>
           </tr>
@@ -95,15 +115,15 @@
           <tr *ngIf="!loading && agendas.length === 0">
             <td colspan="5" class="px-5 py-8 text-center text-slate-500">Nenhuma agenda encontrada.</td>
           </tr>
-          <tr *ngFor="let agenda of agendas" class="hover:bg-slate-50/50 transition-colors">
+          <tr *ngFor="let agenda of agendas; trackBy: trackById" class="hover:bg-slate-50/50 transition-colors">
             <td class="px-5 py-4 text-slate-800 font-medium whitespace-nowrap">
-              {{ agenda.data | date:'dd/MM/yyyy' }}
+              {{ agenda.ano }}
             </td>
             <td class="px-5 py-4 text-slate-600 whitespace-nowrap">
-              {{ agenda.turno }}
+              {{ agenda.mes }}
             </td>
             <td class="px-5 py-4 text-slate-600 whitespace-nowrap">
-              {{ agenda.sala_nome || 'Não definida' }}
+              <span class="text-xs text-slate-400 font-mono">{{ agenda.especialidade_nome || 'Sem Especialidade' }}</span>
             </td>
             <td class="px-5 py-4 whitespace-nowrap">
               <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset" [ngClass]="getBadgeClass(agenda.status)">

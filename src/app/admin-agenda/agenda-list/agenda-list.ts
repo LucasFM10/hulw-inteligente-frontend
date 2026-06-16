@@ -21,13 +21,19 @@ export class AgendaList implements OnInit {
   erro = '';
 
   // Filtros
-  filtroData = '';
+  filtroAno: number | null = null;
+  filtroMes: number | null = null;
   filtroStatus = '';
-  filtroTurno = '';
 
   // Novo payload
-  novaData = '';
-  novoTurno = 'MANHA';
+  novoAno: number = new Date().getFullYear();
+  novoMes: number = new Date().getMonth() + 1;
+  novaEspecialidadeId = '';
+
+  // Adicionado trackBy para performance
+  trackById(index: number, item: any): string {
+    return item.id;
+  }
 
   ngOnInit() {
     this.carregarAgendas();
@@ -37,9 +43,9 @@ export class AgendaList implements OnInit {
     this.loading = true;
     this.erro = '';
     const filtros: any = {};
-    if (this.filtroData) filtros.data = this.filtroData;
+    if (this.filtroAno) filtros.ano = this.filtroAno;
+    if (this.filtroMes) filtros.mes = this.filtroMes;
     if (this.filtroStatus) filtros.status = this.filtroStatus;
-    if (this.filtroTurno) filtros.turno = this.filtroTurno;
 
     this.agendaService.listarAgendas().subscribe({
       next: (data) => {
@@ -60,14 +66,14 @@ export class AgendaList implements OnInit {
   aplicarFiltros() {
     let filtrado = [...this.todasAgendas];
     
-    if (this.filtroData) {
-      filtrado = filtrado.filter(a => a.data === this.filtroData);
+    if (this.filtroAno) {
+      filtrado = filtrado.filter(a => a.ano === this.filtroAno);
+    }
+    if (this.filtroMes) {
+      filtrado = filtrado.filter(a => a.mes === this.filtroMes);
     }
     if (this.filtroStatus) {
       filtrado = filtrado.filter(a => a.status === this.filtroStatus);
-    }
-    if (this.filtroTurno) {
-      filtrado = filtrado.filter(a => a.turno === this.filtroTurno);
     }
     
     this.agendas = filtrado;
@@ -75,15 +81,16 @@ export class AgendaList implements OnInit {
   }
 
   criarAgenda() {
-    if (!this.novaData || !this.novoTurno) {
-      alert('Data e turno são obrigatórios');
+    if (!this.novaEspecialidadeId) {
+      alert('Especialidade é obrigatória');
       return;
     }
     
     this.loading = true;
     this.agendaService.criarAgenda({
-      data: this.novaData,
-      turno: this.novoTurno
+      ano: this.novoAno,
+      mes: this.novoMes,
+      especialidade_id: this.novaEspecialidadeId
     }).subscribe({
       next: (agenda) => {
         this.loading = false;
