@@ -33,13 +33,28 @@ export interface SessaoCirurgica {
   id: string;
   agenda_id: string;
   data: string;
-  turno: string;
+  hora_inicio?: string;
+  hora_fim?: string;
+  turno?: string;
   sala_id?: string;
   responsavel_id?: string;
   status: string;
   observacoes?: string;
   sala_nome?: string;
   itens?: ItemAgendaCirurgica[];
+}
+
+export interface PacienteIgnoradoResponse {
+  paciente_nome: string;
+  motivo: string;
+}
+
+export interface PreenchimentoAutomaticoResponse {
+  itens_adicionados: number;
+  minutos_ocupados: number;
+  minutos_restantes: number;
+  pacientes_ignorados: PacienteIgnoradoResponse[];
+  sessao: SessaoCirurgica;
 }
 
 export interface ItemAgendaCirurgica {
@@ -60,6 +75,7 @@ export interface ItemAgendaCirurgica {
   sala_nome?: string;
   prioridade?: string;
   medida_judicial?: boolean;
+  status_busca_ativa?: string;
 }
 
 export interface EntradaFilaElegivel {
@@ -69,11 +85,14 @@ export interface EntradaFilaElegivel {
   telefone: string;
   especialidade?: string;
   procedimento?: string;
+  tempo_medio_minutos?: number;
   medico?: string;
   prioridade: string;
   medida_judicial: boolean;
   data_entrada: string;
   tempo_espera_dias: number;
+  posicao_fila: number;
+  status_busca_ativa?: string;
 }
 
 @Injectable({
@@ -147,6 +166,15 @@ export class AgendaService {
 
   removerItem(sessaoId: string, itemId: string): Observable<any> {
     return this.http.delete(`${CONFIG.API_URL}/admin/sessoes/${sessaoId}/itens/${itemId}`);
+  }
+
+  reordenarItens(sessaoId: string, itemIds: string[]): Observable<ItemAgendaCirurgica[]> {
+    return this.http.post<ItemAgendaCirurgica[]>(`${CONFIG.API_URL}/admin/sessoes/${sessaoId}/reordenar`, { item_ids: itemIds });
+  }
+
+  // --- Fase 7: Auto-preenchimento ---
+  preencherAutomatico(sessaoId: string, payload: any): Observable<PreenchimentoAutomaticoResponse> {
+    return this.http.post<PreenchimentoAutomaticoResponse>(`${CONFIG.API_URL}/admin/sessoes/${sessaoId}/preencher-automatico`, payload);
   }
 
   // --- Elegibilidade ---

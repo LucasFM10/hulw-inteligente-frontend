@@ -156,7 +156,7 @@ export class AdminDashboard implements OnInit {
       CONFIRMADO_PACIENTE: 'Confirmado',
       PENDENTE: 'Pendente',
       CANCELADO_PACIENTE: 'Cancelado',
-      MENSAGEM_ENVIADA: 'Msg Enviada',
+      MENSAGEM_ENVIADA: 'Mensagem Enviada',
     };
     return map[status] || status;
   }

@@ -76,6 +76,7 @@
             <div>
               <div class="flex items-center gap-2 mb-1">
                 <span class="font-semibold text-slate-900">{{ paciente.paciente_nome }}</span>
+                <span class="inline-flex items-center rounded-md bg-sky-100 px-2 py-0.5 text-xs font-bold text-sky-800 ring-1 ring-inset ring-sky-600/20">#{{ paciente.posicao_fila }} da fila</span>
                 <span *ngIf="paciente.medida_judicial" class="inline-flex items-center rounded-md bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700 ring-1 ring-inset ring-purple-600/20">⚖️ MJ</span>
                 <span *ngIf="paciente.prioridade === 'ONC'" class="inline-flex items-center rounded-md bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/20">Oncológico</span>
                 <span *ngIf="paciente.prioridade === 'BRE'" class="inline-flex items-center rounded-md bg-orange-50 px-2 py-0.5 text-xs font-medium text-orange-700 ring-1 ring-inset ring-orange-600/20">Breve Retorno</span>
@@ -83,8 +84,11 @@
               <div class="text-sm text-slate-600 mb-1">
                 {{ paciente.procedimento || 'Procedimento Padrão' }} <span class="text-slate-400">({{ paciente.especialidade || 'Sem Esp.' }})</span>
               </div>
-              <div class="text-xs text-slate-500">
-                Espera: <span [class.text-red-600]="paciente.tempo_espera_dias > 180" [class.font-semibold]="paciente.tempo_espera_dias > 180">{{ paciente.tempo_espera_dias }} dias</span>
+              <div class="text-xs text-slate-500 flex flex-wrap items-center gap-2">
+                <span>Espera: <span [class.text-red-600]="paciente.tempo_espera_dias > 180" [class.font-semibold]="paciente.tempo_espera_dias > 180">{{ paciente.tempo_espera_dias }} dias</span></span>
+                <span *ngIf="paciente.status_busca_ativa" class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium" [ngClass]="getBuscaAtivaBadge(paciente.status_busca_ativa)">
+                  {{ getBuscaAtivaLabel(paciente.status_busca_ativa) }}
+                </span>
               </div>
             </div>
             
@@ -102,33 +106,45 @@
         <div class="flex justify-between items-center">
           <h2 class="text-lg font-semibold text-slate-800">Sessões</h2>
           <div class="text-sm">
-            <select [(ngModel)]="sessaoSelecionadaId" class="border-slate-200 rounded-md py-1 px-2 text-xs">
+            <select [(ngModel)]="sessaoSelecionadaId" class="h-10 px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 min-w-[200px]">
               <option value="">Selecione uma sessão...</option>
-              <option *ngFor="let s of agenda?.sessoes; trackBy: trackById" [value]="s.id">{{ s.data | date:'dd/MM/yyyy' }} - {{ s.turno }}</option>
+              <option *ngFor="let s of agenda?.sessoes; trackBy: trackById" [value]="s.id">{{ s.data | date:'dd/MM/yyyy' }} - {{ s.hora_inicio?.slice(0,5) }} às {{ s.hora_fim?.slice(0,5) }}</option>
             </select>
           </div>
         </div>
         
         <!-- Form Nova Sessao -->
-        <div class="bg-white p-3 rounded border border-slate-200 flex flex-wrap gap-2 items-end" *ngIf="agenda?.status === 'RASCUNHO'">
-          <div>
-            <label class="block text-xs text-slate-500 mb-1">Data</label>
-            <input type="date" [(ngModel)]="novaSessaoData" class="text-xs border-slate-200 rounded py-1 px-2">
+        <div class="bg-white p-4 rounded-xl border border-slate-200 flex flex-col gap-4" *ngIf="agenda?.status === 'RASCUNHO'">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Data da Sessão</label>
+              <input type="date" [(ngModel)]="novaSessaoData" class="w-full h-10 px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Hora Início</label>
+                <input [ngxTimepicker]="pickerInicioSessao" [format]="24" readonly [value]="novaSessaoHoraInicio" class="w-full h-10 px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer" placeholder="--:--">
+                <ngx-material-timepicker #pickerInicioSessao (timeSet)="novaSessaoHoraInicio = $event"></ngx-material-timepicker>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Hora Fim</label>
+                <input [ngxTimepicker]="pickerFimSessao" [format]="24" readonly [value]="novaSessaoHoraFim" class="w-full h-10 px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer" placeholder="--:--">
+                <ngx-material-timepicker #pickerFimSessao (timeSet)="novaSessaoHoraFim = $event"></ngx-material-timepicker>
+              </div>
+            </div>
           </div>
-          <div>
-            <label class="block text-xs text-slate-500 mb-1">Turno</label>
-            <select [(ngModel)]="novaSessaoTurno" class="text-xs border-slate-200 rounded py-1 px-2">
-              <option value="MANHA">Manhã</option>
-              <option value="TARDE">Tarde</option>
-              <option value="NOITE">Noite</option>
-              <option value="INTEGRAL">Integral</option>
-            </select>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Cirurgião Responsável</label>
+              <select [(ngModel)]="novaSessaoResponsavelId" class="w-full h-10 px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                <option value="">Selecione o cirurgião...</option>
+                <option *ngFor="let prof of profissionais" [value]="prof.id">{{ prof.nome }}</option>
+              </select>
+            </div>
+            <div class="flex items-end">
+              <button (click)="criarSessao()" [disabled]="loading" class="w-full h-10 bg-slate-800 hover:bg-slate-900 text-white font-medium rounded-lg text-sm transition-colors disabled:opacity-50">Criar Sessão</button>
+            </div>
           </div>
-          <div>
-            <label class="block text-xs text-slate-500 mb-1">Sala (ID)</label>
-            <input type="text" [(ngModel)]="novaSessaoSala" placeholder="Opcional" class="text-xs border-slate-200 rounded py-1 px-2 w-24">
-          </div>
-          <button (click)="criarSessao()" [disabled]="loading" class="bg-slate-800 hover:bg-slate-900 text-white text-xs py-1 px-3 rounded h-[26px]">Nova</button>
         </div>
       </div>
       
@@ -141,30 +157,40 @@
           <div class="p-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center cursor-pointer" (click)="sessaoSelecionadaId = sessao.id">
             <div>
               <span class="font-medium text-slate-800">{{ sessao.data | date:'dd/MM/yyyy' }}</span>
-              <span class="text-slate-500 text-xs ml-2">{{ sessao.turno }}</span>
-              <span class="text-slate-400 text-xs ml-2">Sala: {{ sessao.sala_nome || sessao.sala_id || 'Não definida' }}</span>
+              <span class="text-slate-500 text-xs ml-2">{{ sessao.hora_inicio?.slice(0,5) }} às {{ sessao.hora_fim?.slice(0,5) }}</span>
             </div>
             <div class="flex items-center gap-2">
               <span class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset" [ngClass]="getBadgeClass(sessao.status)">
                 {{ sessao.status }}
               </span>
               <button *ngIf="sessao.status === 'RASCUNHO'" (click)="consolidarSessao(sessao.id); $event.stopPropagation()" class="text-xs bg-green-100 text-green-700 hover:bg-green-200 px-2 py-1 rounded transition-colors shadow-sm font-medium">Consolidar</button>
+              <button *ngIf="sessao.status === 'RASCUNHO'" (click)="abrirModalPreenchimento(sessao.id); $event.stopPropagation()" class="text-xs bg-indigo-100 text-indigo-700 hover:bg-indigo-200 px-2 py-1 rounded transition-colors shadow-sm font-medium">✨ Auto-preencher</button>
               <button *ngIf="sessao.status === 'RASCUNHO'" (click)="cancelarSessao(sessao.id); $event.stopPropagation()" class="text-xs bg-red-100 text-red-700 hover:bg-red-200 px-2 py-1 rounded transition-colors shadow-sm font-medium">Cancelar</button>
+              <button *ngIf="sessao.status === 'RASCUNHO'" (click)="removerSessao(sessao.id); $event.stopPropagation()" class="text-slate-400 hover:text-red-600 transition-colors" title="Excluir Sessão">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+              </button>
             </div>
           </div>
           
           <!-- Itens da Sessao -->
-          <ul class="divide-y divide-slate-50">
+          <ul class="divide-y divide-slate-50" cdkDropList (cdkDropListDropped)="drop($event, sessao.id)">
             <li *ngIf="!sessao.itens?.length" class="p-3 text-xs text-center text-slate-400">Nenhum paciente nesta sessão.</li>
-            <li *ngFor="let item of sessao.itens; trackBy: trackById" class="p-4 hover:bg-slate-50 transition-colors group">
-              <div class="flex justify-between items-start mb-2">
-                <div class="flex items-center gap-2">
-                  <span class="font-semibold text-sm text-slate-900">{{ item.paciente_nome }}</span>
-                  <span *ngIf="item.medida_judicial" class="inline-flex items-center rounded-md bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700 ring-1 ring-inset ring-purple-600/20">⚖️ MJ</span>
-                  <span *ngIf="item.prioridade === 'ONC'" class="inline-flex items-center rounded-md bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/20">Oncológico</span>
-                  <span *ngIf="item.prioridade === 'BRE'" class="inline-flex items-center rounded-md bg-orange-50 px-2 py-0.5 text-xs font-medium text-orange-700 ring-1 ring-inset ring-orange-600/20">Breve Retorno</span>
-                  <span *ngIf="item.ordem !== null && item.ordem !== undefined" class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 ring-1 ring-inset ring-slate-500/20">Ordem: {{ item.ordem }}</span>
-                </div>
+            <li *ngFor="let item of sessao.itens; trackBy: trackById" class="p-4 hover:bg-slate-50 transition-colors group flex gap-3" cdkDrag [cdkDragDisabled]="sessao.status !== 'RASCUNHO' || item.status === 'CIRURGIA_CANCELADA' || item.status === 'CIRURGIA_REALIZADA'">
+              <!-- Drag Handle -->
+              <div *ngIf="sessao.status === 'RASCUNHO' && item.status !== 'CIRURGIA_CANCELADA' && item.status !== 'CIRURGIA_REALIZADA'" cdkDragHandle class="cursor-move text-slate-400 hover:text-slate-600 mt-0.5" title="Arraste para reordenar">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path></svg>
+              </div>
+              <div *ngIf="sessao.status !== 'RASCUNHO' || item.status === 'CIRURGIA_CANCELADA' || item.status === 'CIRURGIA_REALIZADA'" class="w-5"></div>
+
+              <div class="flex-1">
+                <div class="flex justify-between items-start mb-2">
+                  <div class="flex items-center gap-2">
+                    <span *ngIf="item.ordem" class="flex items-center justify-center w-5 h-5 rounded-full bg-slate-800 text-white font-bold text-[10px]">{{ item.ordem }}º</span>
+                    <span class="font-semibold text-sm text-slate-900">{{ item.paciente_nome }}</span>
+                    <span *ngIf="item.medida_judicial" class="inline-flex items-center rounded-md bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700 ring-1 ring-inset ring-purple-600/20">⚖️ MJ</span>
+                    <span *ngIf="item.prioridade === 'ONC'" class="inline-flex items-center rounded-md bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/20">Oncológico</span>
+                    <span *ngIf="item.prioridade === 'BRE'" class="inline-flex items-center rounded-md bg-orange-50 px-2 py-0.5 text-xs font-medium text-orange-700 ring-1 ring-inset ring-orange-600/20">Breve Retorno</span>
+                  </div>
                 
                 <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button *ngIf="agenda?.status === 'RASCUNHO' && item.status !== 'CIRURGIA_CANCELADA' && item.status !== 'CIRURGIA_REALIZADA' && sessao.status === 'RASCUNHO'" (click)="abrirModalEditar(sessao.id, item)" class="text-sky-600 hover:text-sky-800 transition-colors" title="Editar Item">
@@ -193,7 +219,8 @@
               <div class="grid grid-cols-2 gap-2 text-xs text-slate-500 mb-2">
                 <div class="flex items-center gap-1">
                   <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                  <span>{{ item.horario_inicio ? item.horario_inicio + (item.horario_fim ? ' às ' + item.horario_fim : '') : 'Horário não definido' }}</span>
+                  <span *ngIf="!item.ordem || item.ordem === 1">{{ item.horario_inicio ? item.horario_inicio.slice(0,5) + (item.horario_fim ? ' às ' + item.horario_fim.slice(0,5) : '') : 'Horário não definido' }}</span>
+                  <span *ngIf="item.ordem && item.ordem > 1" class="font-medium text-sky-700 bg-sky-50 px-1 rounded">A/S (prev. {{ item.horario_inicio ? item.horario_inicio.slice(0,5) + (item.horario_fim ? ' às ' + item.horario_fim.slice(0,5) : '') : 'Não definido' }})</span>
                 </div>
                 <div class="flex items-center gap-1">
                   <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
@@ -201,15 +228,19 @@
                 </div>
                 <div class="flex items-center gap-1">
                   <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-                  <span class="truncate">{{ item.sala_nome || sessao.sala_nome || sessao.sala_id || 'Sala não definida' }}</span>
+                  <span class="truncate">{{ item.sala_nome || 'Sala a definir' }}</span>
                 </div>
                 <div class="flex items-center gap-1">
                   <span class="inline-flex items-center rounded px-1.5 py-0.5 font-medium" [ngClass]="getBadgeClass(item.status)">{{ getStatusLabel(item.status) }}</span>
+                </div>
+                <div class="flex items-center gap-1" *ngIf="item.status_busca_ativa">
+                  <span class="inline-flex items-center rounded-full px-1.5 py-0.5 font-medium text-[10px]" [ngClass]="getBuscaAtivaBadge(item.status_busca_ativa)">Triagem: {{ getBuscaAtivaLabel(item.status_busca_ativa) }}</span>
                 </div>
               </div>
               
               <div *ngIf="item.observacoes" class="mt-2 text-xs text-slate-500 bg-slate-100 p-2 rounded italic">
                 {{ item.observacoes }}
+              </div>
               </div>
             </li>
           </ul>
@@ -238,42 +269,49 @@
     <div class="p-6 space-y-4">
       <div *ngIf="erroModal" class="p-3 bg-red-50 text-red-700 text-sm rounded border border-red-200">{{ erroModal }}</div>
       
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Horário Início</label>
-          <input type="time" [(ngModel)]="formItem.horario_inicio" class="w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Horário Fim</label>
-          <input type="time" [(ngModel)]="formItem.horario_fim" class="w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
-        </div>
+      <div class="bg-blue-50 text-blue-800 text-sm p-3 rounded-md border border-blue-200 mb-4">
+        O horário da cirurgia será calculado automaticamente com base no tempo do procedimento e na fila da sessão.
       </div>
       
-      <div class="grid grid-cols-2 gap-4">
+      <!-- Dados Informativos (Somente Leitura) -->
+      <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-2 mb-4 text-sm">
+        <div class="grid grid-cols-2 gap-2">
+          <div><span class="text-slate-500 font-medium">Paciente:</span> <span class="font-semibold">{{ pacienteAdicionando?.paciente_nome }}</span></div>
+          <div>
+            <span class="text-slate-500 font-medium">Posição na Fila:</span> 
+            <span class="inline-flex items-center rounded-md bg-sky-100 px-2 py-0.5 text-xs font-bold text-sky-800 ring-1 ring-inset ring-sky-600/20">
+              #{{ pacienteAdicionando?.posicao_fila || 'N/A' }}
+            </span>
+          </div>
+          <div class="col-span-2"><span class="text-slate-500 font-medium">Procedimento:</span> {{ pacienteAdicionando?.procedimento || 'Não informado' }}</div>
+          <div><span class="text-slate-500 font-medium">Tempo Médio Estimado:</span> {{ pacienteAdicionando?.tempo_medio_minutos ? pacienteAdicionando?.tempo_medio_minutos + ' min' : 'N/A' }}</div>
+          <div><span class="text-slate-500 font-medium">Especialidade:</span> {{ pacienteAdicionando?.especialidade || 'Não informada' }}</div>
+          <div>
+            <span class="text-slate-500 font-medium">Prioridade:</span> 
+            <span *ngIf="pacienteAdicionando?.medida_judicial" class="mr-1 inline-flex items-center rounded-md bg-purple-50 px-1.5 py-0.5 text-xs font-medium text-purple-700 ring-1 ring-inset ring-purple-600/20">⚖️ MJ</span>
+            {{ pacienteAdicionando?.prioridade || 'SEM' }}
+          </div>
+          <div><span class="text-slate-500 font-medium">Espera:</span> {{ pacienteAdicionando?.tempo_espera_dias || 0 }} dias</div>
+          <div><span class="text-slate-500 font-medium">Sessão:</span> {{ getSessaoSelecionada()?.data | date:'dd/MM/yyyy' }} ({{ getSessaoSelecionada()?.hora_inicio?.slice(0,5) }} às {{ getSessaoSelecionada()?.hora_fim?.slice(0,5) }})</div>
+          <div class="col-span-2"><span class="text-slate-500 font-medium">Cirurgião da sessão:</span> {{ getNomeCirurgiaoSessao() }}</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 gap-4">
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Sala</label>
-          <select [(ngModel)]="formItem.sala_id" class="w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
-            <option value="">(Usar Sala da Sessão)</option>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Sala Cirúrgica</label>
+          <select [(ngModel)]="formItem.sala_id" class="w-full h-10 px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500">
+            <option value="">Selecione uma sala...</option>
             <option *ngFor="let sala of salas" [value]="sala.id">{{ sala.nome }}</option>
           </select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Ordem (Fila)</label>
-          <input type="number" [(ngModel)]="formItem.ordem" placeholder="Ex: 1" class="w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
+          <p class="text-xs text-slate-500 mt-1">A sala será validada automaticamente para evitar conflito de horário.</p>
         </div>
       </div>
-      
-      <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1">Profissional (Cirurgião)</label>
-        <select [(ngModel)]="formItem.medico_id" class="w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
-          <option value="">Selecione...</option>
-          <option *ngFor="let prof of profissionais" [value]="prof.id">{{ prof.nome }}</option>
-        </select>
-      </div>
+
       
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Observações</label>
-        <textarea [(ngModel)]="formItem.observacoes" rows="2" class="w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm"></textarea>
+        <textarea [(ngModel)]="formItem.observacoes" rows="2" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500"></textarea>
       </div>
     </div>
     
@@ -306,31 +344,29 @@
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-1">Horário Início</label>
-          <input type="time" [(ngModel)]="formItem.horario_inicio" class="w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
+          <input [ngxTimepicker]="pickerInicioItem" [format]="24" readonly [value]="formItem.horario_inicio" class="w-full h-10 px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer" placeholder="--:--">
+          <ngx-material-timepicker #pickerInicioItem (timeSet)="formItem.horario_inicio = $event"></ngx-material-timepicker>
         </div>
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-1">Horário Fim</label>
-          <input type="time" [(ngModel)]="formItem.horario_fim" class="w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
+          <input [ngxTimepicker]="pickerFimItem" [format]="24" readonly [value]="formItem.horario_fim" class="w-full h-10 px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer" placeholder="--:--">
+          <ngx-material-timepicker #pickerFimItem (timeSet)="formItem.horario_fim = $event"></ngx-material-timepicker>
         </div>
       </div>
       
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 gap-4">
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Sala</label>
-          <select [(ngModel)]="formItem.sala_id" class="w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
-            <option value="">(Usar Sala da Sessão)</option>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Sala Cirúrgica</label>
+          <select [(ngModel)]="formItem.sala_id" class="w-full h-10 px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500">
+            <option value="">Selecione uma sala...</option>
             <option *ngFor="let sala of salas" [value]="sala.id">{{ sala.nome }}</option>
           </select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Ordem (Fila)</label>
-          <input type="number" [(ngModel)]="formItem.ordem" placeholder="Ex: 1" class="w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
         </div>
       </div>
       
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Profissional (Cirurgião)</label>
-        <select [(ngModel)]="formItem.medico_id" class="w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
+        <select [(ngModel)]="formItem.medico_id" class="w-full h-10 px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500">
           <option value="">Selecione...</option>
           <option *ngFor="let prof of profissionais" [value]="prof.id">{{ prof.nome }}</option>
         </select>
@@ -338,7 +374,7 @@
       
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Observações</label>
-        <textarea [(ngModel)]="formItem.observacoes" rows="2" class="w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm"></textarea>
+        <textarea [(ngModel)]="formItem.observacoes" rows="2" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500"></textarea>
       </div>
     </div>
     
@@ -443,7 +479,7 @@
         
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-1">Motivo *</label>
-          <select [(ngModel)]="desfechoForm.motivo" class="w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
+          <select [(ngModel)]="desfechoForm.motivo" class="w-full h-10 px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500">
             <option value="">Selecione um motivo...</option>
             <option *ngFor="let mot of motivosNaoRealizacao" [value]="mot">{{ getMotivoLabel(mot) }}</option>
           </select>
@@ -460,7 +496,7 @@
       <!-- Observações adicionais em ambos os casos -->
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Observações {{ desfechoForm.realizada ? '(Opcional)' : '' }}</label>
-        <textarea [(ngModel)]="desfechoForm.observacoes" placeholder="Ex: detalhes adicionais sobre o desfecho..." rows="3" class="w-full border-slate-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm"></textarea>
+        <textarea [(ngModel)]="desfechoForm.observacoes" placeholder="Ex: detalhes adicionais sobre o desfecho..." rows="3" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500"></textarea>
       </div>
     </div>
     
@@ -473,6 +509,92 @@
     </div>
   </div>
 </div>
+</div>
+
+<!-- Modal Preenchimento Automático -->
+<div *ngIf="modalPreenchimentoAberto" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm transition-opacity">
+  <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <!-- Header -->
+    <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+      <div>
+        <h3 class="text-lg font-semibold text-slate-900 flex items-center gap-2">
+          ✨ Auto-preencher Sessão
+        </h3>
+        <p class="text-sm text-slate-500">O sistema alocará pacientes elegíveis (status Confirmado) seguindo a ordem da fila oficial.</p>
+      </div>
+      <button (click)="fecharModalPreenchimento()" class="text-slate-400 hover:text-slate-500 rounded-lg p-1.5 hover:bg-slate-100 transition-colors">
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
     </div>
+    
+    <!-- Body -->
+    <div class="p-6 overflow-y-auto">
+      <div *ngIf="erroModal" class="p-3 mb-4 bg-red-50 text-red-700 text-sm rounded border border-red-200">{{ erroModal }}</div>
+      
+      <div *ngIf="!resultadoPreenchimento" class="space-y-4">
+        <!-- Estratégia de Sala -->
+        <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-4">
+          <label class="block text-sm font-medium text-slate-700 mb-2">Sala Cirúrgica Padrão *</label>
+          <select [(ngModel)]="formPreenchimento.sala_id" class="w-full h-10 px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500">
+            <option value="">Selecione a sala para esta sessão...</option>
+            <option *ngFor="let sala of salasAtivas" [value]="sala.id">{{ sala.nome }}</option>
+          </select>
+          <p class="text-xs text-slate-500 mt-2">Todos os pacientes serão agendados nesta sala. O sistema validará se a sala está disponível.</p>
+        </div>
+
+        <!-- Opções Avançadas -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Duração Padrão (Fallback)</label>
+            <input type="number" [(ngModel)]="formPreenchimento.duracao_padrao_minutos" class="w-full h-10 px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500">
+            <p class="text-[10px] text-slate-500 mt-1">Usada se o procedimento não tiver tempo médio.</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Limite de Pacientes (Opcional)</label>
+            <input type="number" [(ngModel)]="formPreenchimento.limite_pacientes" placeholder="Sem limite" class="w-full h-10 px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500">
+          </div>
+        </div>
+
+        <div class="mt-4 flex items-center">
+          <input type="checkbox" id="pular" [(ngModel)]="formPreenchimento.pular_se_nao_couber" class="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500">
+          <label for="pular" class="ml-2 block text-sm text-slate-700">Pular paciente se a cirurgia não couber no tempo restante da sessão (Otimiza a ocupação da sala).</label>
+        </div>
+      </div>
+
+      <!-- Relatório de Resultado -->
+      <div *ngIf="resultadoPreenchimento" class="space-y-4">
+        <div class="bg-green-50 border border-green-200 text-green-800 rounded-lg p-4">
+          <h4 class="font-semibold flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Preenchimento concluído</h4>
+          <ul class="mt-2 text-sm space-y-1 list-disc list-inside">
+            <li><strong>{{ resultadoPreenchimento.itens_adicionados }}</strong> pacientes adicionados à sessão.</li>
+            <li><strong>{{ resultadoPreenchimento.minutos_ocupados }}</strong> minutos ocupados na agenda.</li>
+            <li><strong>{{ resultadoPreenchimento.minutos_restantes }}</strong> minutos livres restantes.</li>
+          </ul>
+        </div>
+        
+        <div *ngIf="resultadoPreenchimento.pacientes_ignorados?.length > 0">
+          <h4 class="font-semibold text-sm text-slate-800 mb-2">Pacientes Ignorados</h4>
+          <div class="max-h-40 overflow-y-auto border border-slate-200 rounded-lg bg-slate-50 p-2">
+            <ul class="text-xs text-slate-600 space-y-2">
+              <li *ngFor="let ign of resultadoPreenchimento.pacientes_ignorados" class="flex flex-col border-b border-slate-200 pb-2 last:border-0 last:pb-0">
+                <span class="font-medium text-slate-800">{{ ign.paciente_nome }}</span>
+                <span class="text-red-600">{{ ign.motivo }}</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50 px-6 py-4 rounded-b-xl">
+      <button *ngIf="!resultadoPreenchimento" (click)="fecharModalPreenchimento()" class="px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-800 bg-white border border-slate-300 rounded-md shadow-sm hover:bg-slate-50">Cancelar</button>
+      <button *ngIf="!resultadoPreenchimento" (click)="executarPreenchimento()" [disabled]="loadingModal || !formPreenchimento.sala_id" class="px-4 py-2 text-sm font-medium text-white border border-transparent rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 transition-colors bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500">
+        {{ loadingModal ? 'Preenchendo...' : 'Preencher Sessão' }}
+      </button>
+      <button *ngIf="resultadoPreenchimento" (click)="fecharModalPreenchimento()" class="px-4 py-2 text-sm font-medium text-white bg-slate-800 hover:bg-slate-900 rounded-md shadow-sm transition-colors">Fechar</button>
+    </div>
+    </div>
+  </div>
   </main>
 </div>

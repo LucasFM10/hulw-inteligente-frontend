@@ -1,0 +1,6 @@
+<main class="docs-page">
+  <article #content class="markdown-body" [innerHTML]="html"></article>
+
+  <p *ngIf="!html && !errorMessage" class="docs-status">Carregando guia visual...</p>
+  <p *ngIf="errorMessage" class="docs-status docs-status--error">{{ errorMessage }}</p>
+</main>

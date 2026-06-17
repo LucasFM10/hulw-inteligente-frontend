@@ -7,6 +7,11 @@ import { AgendaList } from './admin-agenda/agenda-list/agenda-list';
 import { AgendaDetail } from './admin-agenda/agenda-detail/agenda-detail';
 
 export const routes: Routes = [
+  {
+    path: 'docs-projeto',
+    loadComponent: () => import('./docs-projeto/docs-projeto').then(m => m.DocsProjeto),
+  },
+
   // Tela de login (pública)
   { path: 'login', component: AdminLoginComponent },
 
