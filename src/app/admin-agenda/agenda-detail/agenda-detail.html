@@ -204,7 +204,7 @@
                   <span class="truncate">{{ item.sala_nome || sessao.sala_nome || sessao.sala_id || 'Sala não definida' }}</span>
                 </div>
                 <div class="flex items-center gap-1">
-                  <span class="inline-flex items-center rounded px-1.5 py-0.5 font-medium" [ngClass]="getBadgeClass(item.status)">{{ item.status }}</span>
+                  <span class="inline-flex items-center rounded px-1.5 py-0.5 font-medium" [ngClass]="getBadgeClass(item.status)">{{ getStatusLabel(item.status) }}</span>
                 </div>
               </div>
               

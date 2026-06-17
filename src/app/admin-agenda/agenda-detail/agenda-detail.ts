@@ -659,4 +659,20 @@ export class AgendaDetail implements OnInit {
       default: return 'bg-gray-100 text-gray-800 ring-gray-600/20';
     }
   }
+
+  getStatusLabel(status: string): string {
+    if (!status) return '';
+    switch(status) {
+      case 'RASCUNHO': return 'Rascunho';
+      case 'CONSOLIDADA': return 'Consolidada';
+      case 'CANCELADA': return 'Cancelada';
+      case 'RASCUNHO_AGENDA': return 'Rascunho (Não Confirmado)';
+      case 'PRE_AGENDADO': return 'Pré-agendado';
+      case 'AGUARDANDO_CONFIRMACAO': return 'Aguardando Confirmação';
+      case 'CIRURGIA_AGENDADA': return 'Cirurgia Agendada';
+      case 'CIRURGIA_REALIZADA': return 'Cirurgia Realizada';
+      case 'CIRURGIA_CANCELADA': return 'Cirurgia Cancelada';
+      default: return status;
+    }
+  }
 }
